@@ -10,6 +10,7 @@ from common import DATA, session, get_json
 OUT = DATA / 'spot'
 OUT.mkdir(parents=True, exist_ok=True)
 ARCH = 'https://data.binance.vision/data/spot'
+ARCH_UM = 'https://data.binance.vision/data/futures/um'
 
 
 def _parse_zip(content):
@@ -17,6 +18,7 @@ def _parse_zip(content):
     name = z.namelist()[0]
     df = pd.read_csv(z.open(name), header=None, usecols=[0, 1, 2, 3, 4, 5])
     df.columns = ['ts', 'o', 'h', 'l', 'c', 'v']
+    df = df[pd.to_numeric(df.ts, errors='coerce').notna()].astype(float)
     # 2025+ files are in microseconds
     ts = df['ts'].astype('int64')
     ts = np.where(ts > 1e15, ts // 1_000_000, np.where(ts > 1e12, ts // 1000, ts))
@@ -24,7 +26,8 @@ def _parse_zip(content):
     return df
 
 
-def fetch_symbol(sym, start='2024-09', end_day=None):
+def fetch_symbol(sym, start='2024-09', end_day=None, arch=None):
+    arch = arch or ARCH
     end_day = end_day or dt.date.today()
     frames = []
     s = session()
@@ -33,7 +36,7 @@ def fetch_symbol(sym, start='2024-09', end_day=None):
     # monthly files up to last full month
     first_of_this_month = dt.date(end_day.year, end_day.month, 1)
     while cur < first_of_this_month:
-        url = f'{ARCH}/monthly/klines/{sym}/1m/{sym}-1m-{cur:%Y-%m}.zip'
+        url = f'{arch}/monthly/klines/{sym}/1m/{sym}-1m-{cur:%Y-%m}.zip'
         r = s.get(url, timeout=120)
         if r.status_code == 200:
             frames.append(_parse_zip(r.content))
@@ -43,15 +46,15 @@ def fetch_symbol(sym, start='2024-09', end_day=None):
     # daily files for current month
     d = first_of_this_month
     while d < end_day:
-        url = f'{ARCH}/daily/klines/{sym}/1m/{sym}-1m-{d:%Y-%m-%d}.zip'
+        url = f'{arch}/daily/klines/{sym}/1m/{sym}-1m-{d:%Y-%m-%d}.zip'
         r = s.get(url, timeout=120)
         if r.status_code == 200:
             frames.append(_parse_zip(r.content))
         d += dt.timedelta(days=1)
     df = pd.concat(frames, ignore_index=True)
-    # tail via REST
+    # tail via REST (spot only)
     last = int(df['ts'].max())
-    while True:
+    while arch == ARCH:
         r = get_json('https://data-api.binance.vision/api/v3/klines',
                      params={'symbol': sym, 'interval': '1m', 'startTime': (last + 60) * 1000, 'limit': 1000})
         if not r:
@@ -65,8 +68,9 @@ def fetch_symbol(sym, start='2024-09', end_day=None):
     df = df.drop_duplicates('ts').sort_values('ts').reset_index(drop=True)
     for col in ['o', 'h', 'l', 'c']:
         df[col] = df[col].astype('float64')
-    df['v'] = df['v'].astype('float32')
-    df.to_parquet(OUT / f'{sym}_1m.parquet', compression='zstd')
+    df = df[['ts', 'h', 'l', 'c']]
+    df['ts'] = df.ts.astype('int64')
+    df.to_parquet(OUT / f'{sym}_1m.parquet', compression='zstd', compression_level=9)
     print(sym, len(df), pd.to_datetime(df.ts.min(), unit='s'), pd.to_datetime(df.ts.max(), unit='s'), flush=True)
 
 
@@ -98,5 +102,7 @@ if __name__ == '__main__':
     for w in what:
         if w == 'DVOL':
             fetch_dvol('BTC'); fetch_dvol('ETH')
+        elif w == 'HYPEUSDT':
+            fetch_symbol(w, start='2025-06', arch=ARCH_UM)
         else:
-            fetch_symbol(w)
+            fetch_symbol(w, start='2025-01')

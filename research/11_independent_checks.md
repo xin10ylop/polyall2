@@ -25,3 +25,9 @@ Matching ≈5,000 real taker NO fills shows the true cost over (1 − mid) is 0.
 A distance-to-strike filter pre-registered on H1 (skip x < 4.25 σ√τ units) removed all 3 H2 losses with unchanged ROI.
 Capacity ≈ $10–12k staked/day → ≈ $40–50/day. The bot's limit rule (NO ask ≤ 1 − mid + 0.3 c) only takes the cheaper
 subset, so it trades less often than the backtest.
+
+## Finance/commodity/alt barrier markets (research/04 §9)
+Mids are meaningless (weekly gold/silver/WTI ladders show 88–95 c spreads); only print-triggered evaluation is valid.
+Weekly: +17% (H1, t 2.7) → +0.5% (H2, t 0.6) with an hourly-bar model; natural-gas weekly held in both halves
+(+40% / +24%, t 3.0 / 2.2) but median trades are $6–27. Vagabund97's own fills keep earning in H2 (+26% weekly),
+consistent with reacting on 1-minute data. Verdict: real but tiny; pilot only after a 1-minute rebuild.

@@ -24,6 +24,11 @@ FAMILY = {  # series -> (family label, candidate proxies in order of preference,
     'ng-hit-month': ('ng', ['NG'], 0.04), 'spy-hit-price-weekly': ('spy', ['SPY'], 0.04), 'spy-hit-month': ('spy', ['SPY'], 0.04),
     'nvidia-hit-price-weekly': ('nvda', ['NVDA'], 0.04), 'nvidia-hit-price-monthly': ('nvda', ['NVDA'], 0.04),
 }
+ALT_FAMILY = {  # Binance-resolved alt monthly barriers (crypto fee rate 0.07); hourly bars aggregated from Binance 1m
+    'hyperliquid-hit-price-monthly': ('hype', ['HYPEUSDT'], 0.07), 'dogecoin-hit-price-monthly': ('doge', ['DOGEUSDT'], 0.07),
+    'bnb-hit-price-monthly': ('bnb', ['BNBUSDT'], 0.07), 'solana-hit-price-monthly': ('sol', ['SOLUSDT'], 0.07),
+    'xrp-hit-price-monthly': ('xrp', ['XRPUSDT'], 0.07),
+}
 NS = np.array([2, 4, 7, 12, 16, 23, 35, 46, 69, 92, 115, 160, 230, 350, 460])
 
 

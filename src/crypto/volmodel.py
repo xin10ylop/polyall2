@@ -18,7 +18,7 @@ from common import DATA
 
 YEAR_MIN = 365.0 * 1440
 MOW = 10080  # minutes per week
-SYMS = {'BTC': 'BTCUSDT', 'ETH': 'ETHUSDT', 'SOL': 'SOLUSDT', 'XRP': 'XRPUSDT'}
+SYMS = {'BTC': 'BTCUSDT', 'ETH': 'ETHUSDT', 'SOL': 'SOLUSDT', 'XRP': 'XRPUSDT', 'DOGE': 'DOGEUSDT', 'BNB': 'BNBUSDT', 'HYPE': 'HYPEUSDT'}
 _cache = {}
 
 

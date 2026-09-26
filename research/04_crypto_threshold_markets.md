@@ -159,6 +159,11 @@ No robust, non-latency edge after costs. A good spot/vol model is marginally bet
 
 **Bottom line:** Polymarket's crypto threshold markets are well calibrated relative to a Binance-data/DVOL Student-t model once taker fees (0.07·p(1−p)) and 1–3 c spreads are paid. Everything that looks large (up/down, short-horizon "above") is quote lag that disappears with 1 minute of delay. Two small residuals survive realistic fills: (i) selling 0.5–3 c daily-barrier longshots (+0.7 %/trade, ≈$25/day at the book depth available, tail-crash risk), and (ii) model-based trading of newly listed (4–7 days out) BTC "above" strikes (+10–12 % OOS but t≈2.5, directional, ≈$10–40/day). Neither justifies capital beyond a paper-trading / small live pilot.
 
+**Update after the follow-ups (§8–§9):**
+- **Daily-barrier longshot sale:** realistic tail fill costs cut it to **+0.36 %/trade across BTC/ETH/SOL/XRP** (+0.54 % BTC), positive in both halves. It is absent in weekly/monthly windows and in the 3–6 c band. A strike-distance filter pre-registered on H1 (x ≥ 4.25σ) removed all H2 losses but did not raise ROI. Capacity is ≈ $10k/day for ≈ $40–50/day.
+- **Finance/commodity "hit" markets:** the CLOB mid is unusable (spreads of 50–95 c). With print-based fills, a walk-forward barrier model earned +13–38 % in H1 but ≈ 0 in H2 (except natural gas). Capacity is a few hundred dollars per day.
+- **Vagabund97:** their realised ROI sorts cleanly by our model edge, and their edge persisted through H2, which is consistent with minutes-scale execution on 1-minute data.
+
 Artifacts: `src/crypto/` (fetch_events, fetch_spot, fetch_pm_history, parse_markets, volmodel, train_samples, walkforward, panel, evaluate, prereg, report_above, analyze_above/range/touch/updown, implied, live_books, compact); cached panels in `data/crypto/panel_*.parquet`, detailed tables in `data/crypto/report_above_BTC.md`, `data/crypto/report_range_BTC.md`, live book snapshot `data/crypto/live_books_20260926T1409.parquet`.
 
 ## 8. Follow-up: barrier longshot sale — cross-asset replication, loss filter, live scanner
@@ -215,3 +220,55 @@ Code: `src/crypto/barrier_panels.py` (panels, decision times W1−{24,18,12,6,3,
 
 ### 8.4 Live scanner
 `python src/crypto/barrier_signals.py [--max-hours 12] [--min-x 4.25] [--rv-filter] [--all] [--json out.json]` lists every open daily/weekly/monthly BTC/ETH/SOL/XRP barrier strike that is untouched and within the time limit. For each it shows the YES mid, the NO ask (from the NO book, or 1 − YES bid), NO depth within 0.3 c / 1 c, the fee, the ROI if untouched, the break-even touch probability, and x = distance / (24h realised σ·√τ). Rows are flagged when x < min-x or when 1h RV is above its 30-day 90th percentile. It only reads data and never places orders. Its x uses a plain 24h-RV σ rather than the backtest's t-model scale. On the panel, model-x / (dist ÷ RV24·√τ) has a median of 1.37 (IQR 1.18–1.63), so the backtest filter x ≥ 4.25 corresponds to **`--min-x 3.1`** in scanner units (approximate).
+
+## 9. Follow-up: finance/commodity and altcoin barrier markets vs. wallet Vagabund97
+
+Code: `src/crypto/fetch_fin_underlying.py`, `analyze_fin_barrier.py` (panel + walk-forward model), `fin_backtest.py`, `fin_prints.py`, `fin_print_trigger.py` (executable print-based backtests), `fin_vaga.py` (wallet comparison), `altm_panels.py`. Data: `data/crypto/fin/`, `data/crypto/vaga/`, `data/crypto/panel_fin_barrier.parquet`, `data/crypto/fin_print_trigger_*.parquet`.
+
+### 9.1 Families, rules, resolution sources and basis
+| family (series) | events used | resolution rule | proxy data we used | reproduced resolutions |
+|---|---|---|---|---|
+| Gold XAUUSD weekly (11397) / monthly (12052 + 3 unseriesed) | 26 w / 6 m | **Pyth** XAU/USD 1-min High/Low, after market creation, inside Pyth sessions (Sun 18:00 → Fri 17:00 ET, daily 17–18 ET break) | Binance USD-M **XAUUSDT perp** 1h, filtered to Pyth session hours; Yahoo GC=F as second proxy | perp 97.7 % (12/520 disagree); GC=F futures only 92.1 % (contango basis ≈ 0.5–1 %) |
+| Silver XAGUSD weekly / monthly | 26 / 6 | Pyth XAG/USD, same session rules | XAGUSDT perp; SI=F | perp 98.5 %; SI=F 95.2 % |
+| WTI weekly (11399) + monthly (6 unseriesed, $8–60 M volume each) | 26 / 6 | Pyth, **active month** of WTI futures (rolls 2 sessions before expiry) | Yahoo CL=F 1h | 99.8 % |
+| Natural gas weekly (11401) / monthly (11908) | 26 / 3 | Pyth NG active month | Yahoo NG=F | 97.3 % (roll timing) |
+| SPY weekly (11389) / monthly (11909) | 26 / 4 | Pyth SPY, **regular hours only** | Yahoo SPY 1h RTH | 99.1 % |
+| NVDA weekly (11380) / monthly (10482) | 26 / 12 | Pyth NVDA, regular hours only | Yahoo NVDA 1h RTH | 99.8 % |
+| HYPE / DOGE / BNB / SOL / XRP monthly | 11–16 each | Binance 1m Low/High (HYPE: **USDⓈ-M perp** HYPEUSDT; others spot) | Binance 1m (exact source) | 100 % |
+
+Pyth's historical API needs authentication (the TradingView-shim history endpoint returns 404, `/v1/updates` returns 401), so we could not download the exact source. Basis risk vs the best proxy is about 1.5–2.5 % of strikes for gold/silver/NG and under 1 % for WTI/SPY/NVDA. The CME **settlement**-based families ("Crude Oil (CL) hit…", "Gold (GC) hit…", "Silver (SI) hit…") resolve on the official daily settle, not on intraday prints. They are a different product and were not modelled; Vagabund97 lost −7 % on them.
+
+Fees: finance markets pay `0.04·p(1−p)` (taker only); crypto alts pay `0.07·p(1−p)`.
+
+### 9.2 Model
+The model uses hourly bars from the proxy. It keeps an EWMA per-bar vol (half-life 60 bars) as of the last *completed* bar, and counts the remaining bars n in the window from the deterministic session calendar. The standardised distance is x = |ln(H/S)| / (σ√n). P(hit) is the empirical survival function of the standardised running extreme max(|ln H_k/S|, |ln L_k/S|)/(σ√n) over n bars, pooled across up and down strikes. It is estimated on bars whose horizon ended before the first day of the decision month (walk-forward); overnight and weekend gaps are included in the empirical distribution. Decisions are taken at 16:00 UTC on each weekday while a strike is live and untouched.
+
+### 9.3 The CLOB midpoint is meaningless in these books
+This is the main pitfall. A live snapshot (2026-09-26) of next week's gold ladder shows **YES bid 0.02–0.50 against YES ask 0.98 on every strike**. Median spreads are 88–95 c for gold, silver and WTI weekly, 17–22 c for SPY, 6–7 c for NVDA, and 47–96 c for HYPE/BNB/DOGE monthly. With mids, the market looks badly overpriced on touches: 35–50 c bins realise 31 %, and a weekly buy-NO model rule shows +28 % ROI (t 5). But only **2.7 %** of those signals had a real fill within 15 minutes. A strike 3σ away "priced" at a 28 c mid is simply a 0.02/0.55 book. **Every mid-based result for these families is therefore discarded.**
+
+### 9.4 Executable backtests
+* **Print-triggered backtest.** Every historical taker print reveals real liquidity: a YES bid that was hit means NO was buyable at 1−px, and a YES ask that was lifted means YES was buyable at px. At each print we evaluate the model using only hourly bars completed before the print, take the revealed side if the edge after fees exceeds θ, and allow at most one trade per market per hour, at the print's size.
+
+| subset (θ = 5 c) | trades | events | ROI | t (event-clustered) | trades/day | median print size |
+|---|---:|---:|---:|---:|---:|---:|
+| all finance barriers | 26,258 | 192 | +5.9 % | 0.1 | 80 | $6–20 |
+| weekly finance, H1 (< 2026-06-15) | 2,463 | 66 | +17.3 % | 2.7 | 32 | |
+| **weekly finance, H2 (≥ 2026-06-15)** | 4,519 | 90 | **+0.5 %** | 0.6 | 44 | |
+| weekly, buying NO: H1 / H2 | 1,512 / 2,561 | 64 / 88 | +13.2 % / **−3.2 %** | 2.1 / −0.9 | | $20 / $12 |
+| weekly, buying YES: H1 / H2 | 951 / 1,958 | 63 / 87 | +32 % / +9.9 % | 1.9 / 0.9 | | $6 |
+| monthly finance | 19,276 | 37 | +5.5 % | −0.5 | | |
+| weekly, one trade per market, θ = 10 c: H1 / H2 | 356 / 529 | 64 / 89 | +38 % / +9.4 % | 4.1 / 1.4 | 4.9 / 5.2 | |
+| alt monthly (HYPE/DOGE/BNB/SOL/XRP) | 11,996 | 69 | **−7.8 %** | −2.2 | | (YES side −34 %, NO side +10 %, t 1.4) |
+
+  By family, weekly θ = 5 c, H1 → H2: gold +34 % → +13 % (t 3.1 → 0.6); **natural gas +40 % → +24 % (t 3.0 → 2.2, the only family positive and significant in both halves)**; SPY +8 % → +6 %; silver +18 % → −17 %; WTI +18 % → −12 %; NVDA +13 % → −7 %.
+* A decision-time version (16:00 UTC, fill only on a qualifying print within 15 min / 1 h / 4 h) gives +3 % to +8 % ROI with |t| < 1.6. The mid-based alt monthly result (+30 %, t 4.7) likewise collapses to −8 % with prints.
+
+### 9.5 Vagabund97 (0xa53b…4021)
+* 2,823 fills since 2025-12-12 (69 % taker), $148k notional, **+$25.0k realised on resolved markets (+17 % per $)**. In the families above: weekly gold +42 %, weekly WTI +23 %, weekly silver +12 %, monthly silver +33 %, monthly gold +15 %, monthly WTI +13 %, alt monthly +17 %, SPY −24 %, CME-settle families −7 %.
+* Entries are mostly 15–50 c tokens, typically 2–3 days after window open and 55–80 h before the end of weekly windows, 97 % as taker, with fills of about $50–100 each.
+* **Our model evaluated at their fill times** (694 fills, $72k, no look-ahead): their realised ROI rises monotonically with our model edge. Edge ≤ −10 c: +1 %; −10…−3 c: +5 %; ±3 c: +22 %; +3…+10 c: +29 %; +10…+20 c: +35 %; correlation 0.14. They trade in line with a spot+vol barrier model, as suspected.
+* **Their performance did not decay:** weekly H1 +21 %, H2 +26 %; monthly +9 % / +15 %. Our hourly-bar print-triggered replica decays to about 0 in H2. The likely difference is execution: they react within minutes on 1-minute underlying data, choose their moments (the book is stale right after underlying moves), and probably use a better-calibrated model. That is a minutes-scale reaction edge. It is not millisecond latency, but our hourly-snapshot backtest cannot capture it.
+
+### 9.6 Capacity and verdict
+* **Capacity is tiny.** Live NO-side depth within 2 c of the ask is about $60 (gold weekly), $140 (silver), $250 (WTI), $820 (SPY) and $40–100 (NVDA) per strike. Historical prints have a median of $6–27. Vagabund97 deploys about $500/day of notional for roughly $90/day of P&L across *all* their families, which is about the ceiling for one careful taker.
+* **Verdict:** a hourly-bar barrier model **does** identify mispricing in the finance "hit" markets: the realised ROI of a known profitable trader sorts cleanly by our model edge, and H1 print-based results are +13–38 % with t 2–4. But our non-latency implementation lost the edge in H2 (Jun–Sep 2026) except for natural gas, and capacity is a few hundred dollars per day. It is worth a paper-trading pilot only if it is re-built on 1-minute underlying data with continuous monitoring (react within minutes to underlying moves, take only resting liquidity at model-edge ≥ 10 c, weekly gold/NG/SPY). It is not a scalable strategy. Alt-coin monthly barriers show no edge once executable prices are used.
