@@ -1,7 +1,15 @@
 # 03 — Polymarket weather markets: is there an executable forecast edge?
 
-Status: IN PROGRESS (written incrementally). Date of study: 2026-09-26.
-Code: `src/weather/`. Raw/cached data: `data/weather/` (not committed).
+Status: COMPLETE. Date of study: 2026-09-26. Code: `src/weather/`. Raw/cached data: `data/weather/` (not committed, ~280 MB).
+
+**Bottom line.** (1) No exploitable forecast edge: a walk-forward, bias-corrected ECMWF + NBM model is worse than the
+market price (bucket log loss 0.252 vs 0.220 at D-1) and loses 2–4 % per trade net of spread and the 5 %·p(1−p) taker fee
+(Jul–Sep holdout included). (2) No capturable intraday "near-dead" edge with hourly METARs + forecasts: the market beats
+the model at every hour and the late-day longshot bias is already in the executable prices. (3) The deterministic
+"dead bucket" trade (buy NO once the METAR running max exceeds the bucket) is real, +8–9 % per $ on contested fills with
+~99 % of days positive, but it is a race decided within ~1–2 minutes of the observation time, before the public
+aviationweather.gov feed publishes the METAR (median 274 s); it is already farmed by a few wallets at ~$4k/day each
+(~$100–170/day profit), leaving tens of dollars per day for a public-feed bot. Details in §4–§8.
 
 ---
 
@@ -83,9 +91,12 @@ Median event volume: $30k (Panama City) – $224k (Hong Kong); London $116k, NYC
 | NBM MOS (US) | IEM MOS archive, model `NBS` (NBM text: 3-hourly T, TXN daytime max + XND spread), exact run times 01/07/13/19Z | 11 US stations, 2024-12 → 2026-09 | `fetch_nbs.py` |
 | Open-Meteo Previous Runs (`temperature_2m_previous_dayN`, ECMWF IFS/GFS/ICON/best_match) | previous-runs-api.open-meteo.com | **only KLGA** was obtained before the shared-IP daily quota was exhausted (HTTP 429 "Daily API request limit exceeded"); the main forecast API does not serve previous_dayN history | `fetch_forecasts.py` |
 | ECMWF IFS HRES open data, `mx2t3` (3-h max 2 m T), 0.25° | AWS `ecmwf-forecasts` bucket, byte-range GRIB2 of one field per step, decoded with pygrib, bilinear to station | runs 00Z/12Z, steps 3–57 h, 2026-02-15 → 2026-09-26, all stations | `fetch_ecmwf.py`, `ecmwf_features.py` |
+| Exact target-day prints | data-api taker trades, kept for [local 00:00, +30 h) of the target day | 7,407 "highest" events May–Sep 2026, 10.5M prints | `fetch_raw_d0.py` |
+| METAR receipt times | aviationweather.gov `/api/data/metar` (`receiptTime`) | last 15 days only (API limit), 22k METARs | `fetch_receipts.py` |
+| Flagged wallets' fills | data-api `/trades?user=` (maker+taker; last 10,000 fills per wallet) | 4 wallets, Apr–Sep 2026 | `fetch_wallets.py`, `wallet_analysis.py` |
 | Live order books | `POST clob.polymarket.com/books` | snapshots of all ~3,200 open temperature buckets (2026-09-26) | `live_books.py`, `analyze_books.py` |
 
-Trades are stored as 10-minute **YES-equivalent** bars per bucket (`trade_bars/`): a taker BUY of YES at p and a taker SELL of NO
+Trades are stored as 10-minute **YES-equivalent** bars per bucket (`trade_bars_all.parquet`): a taker BUY of YES at p and a taker SELL of NO
 at 1-p are both "lifts of the YES ask at p"; a taker SELL of YES at p / BUY of NO at 1-p are "hits of the YES bid at p".
 Per bar: VWAP, min, max, shares, #prints, #distinct wallets. Trade-derived last prices match CLOB `prices-history` to ~1c
 (checked on NYC 2026-09-24 at three decision times).
@@ -94,11 +105,15 @@ Per bar: VWAP, min, max, shares, #prints, #distinct wallets. Trade-derived last 
 
 The daily max of the whole-degree METAR temperatures (routine + special reports, station local calendar day; for °F
 stations IEM `tmpf` rounded half-up, for °C stations the METAR integer °C) falls inside the winning bucket in
-**99.6–99.8 % of resolved events** (WU-era and NOAA-era alike; `check_resolution.py`, `data/weather/resolution_check.parquet`).
-The rare misses are 1-degree boundary cases (late corrections, 5-min data, or the "max at 23:5x" edge). Consequences:
+**99.2–100 % of resolved events at most stations** (10,812 checked events; overall 97.9 % in the WU era and 98.6 % in
+the NOAA era because of a handful of problem stations listed below; `check_resolution.py`,
+`data/weather/resolution_check.parquet`). At good stations the misses are 1-degree boundary cases (late
+corrections, 5-minute data, rounding). Consequences:
 * the outcome is effectively a public, real-time observable: once the day's peak has passed the answer is known from
   METARs (published every 30–60 min) hours before resolution;
-* model training can use METAR daily max as the target with negligible label noise.
+* model training can use METAR daily max as the target with negligible label noise (problem stations aside);
+* a strict dead bucket nevertheless resolved YES in 0.14 % of cases (0.04 % with a 1-degree margin) — the tail risk
+  of the dead-bucket trade.
 
 Station-level exceptions matter for any observation-based strategy (`resolution_check.parquet`, walk-forward station
 filter in `dead_sim.py`): Shenzhen ZGSZ in the WU era matched only 24 % (the WU page evidently used a different
@@ -299,3 +314,64 @@ frequency.** The flagged wallets' profitable "alive" trades (YES on the bucket c
 e.g. 1-/5-minute ASOS or national met-service feeds that reveal the day's peak before the next METAR), not with
 a better forecast model; we cannot reproduce them with hourly METARs.
 
+## 7. Other weather/climate markets (not backtested)
+
+Monthly GISTEMP anomaly ("<month> temperature increase"), "hottest year/month on record", monthly precipitation
+(NYC, Seattle), snowfall, hurricane landfall/named-storm counts, tornado counts, earthquakes and disease markets
+share the `weather` tag. Individually some are large ($1–8M for monthly global temperature), but there are only
+~10–40 comparable events per family, so no statistically meaningful backtest is possible. The monthly global
+temperature markets are the only ones where a public-data nowcast (ERA5/Copernicus daily global means, available
+days to weeks before NASA publishes) could plausibly carry an edge; that would be a separate, small-N study.
+
+## 8. Conclusions
+
+1. **Forecast edge (D-1 / D0 morning): none.** A walk-forward, bias-corrected ECMWF IFS + NBM model with calibrated
+   Student-t errors is clearly worse than the market (bucket log loss 0.252 vs 0.220 at D-1), adds nothing when
+   stacked with the market price out of sample (0.2203 vs 0.2197), and loses 2–4 % per trade after spread and fee.
+   A small stacked-model profit existed in Dec 2025 – Mar 2026 (NYC/London/US cities, thin markets) and vanished
+   after April 2026.
+2. **Intraday probabilistic (near-dead) edge: none capturable as a taker** with hourly METARs + ECMWF/NBM. Market
+   log loss beats the model at every hour 10–19 h; the only miscalibration (mild longshot bias late in the day) is
+   already priced into the executable NO prints; after the 5 %·p(1−p) fee the rule loses 0.4–2 %.
+3. **Deterministic dead-bucket edge: real but a latency race.** Buying NO on buckets strictly below the running
+   METAR max (and YES on crossed top tails) earns ~8–9 % per $ on the contested fills if executed within
+   0–120 s of the observation time, with 99 % of days positive (walk-forward station filter), but ≈ 80 % of the
+   cheap liquidity is gone within ~90 s and the public AWC feed delivers the METAR only after a median 274 s, when
+   the NO is already 0.998–0.999. Leading wallets (Weatherstappen, bhuumi) do exactly this at 55–220 s with
+   ~$4k/day each and 2.6–4.1 % PnL per $ (~$100–170/day). A new entrant with public feeds would earn tens of dollars
+   per day; with a sub-minute proprietary feed perhaps $150–500/day before competition, trending down.
+4. **Executability**: spreads 2 c (D-1) to 3–9 c (D0 live buckets), $80–260 within 3 c of the best ask per bucket,
+   fee 5 %·p(1−p) (up to 1.25 c/share at 50 c). Any model needs > 3–5 c of true edge per contract to survive; none
+   of our public-data models have it.
+
+### Assumptions and look-ahead audit
+* Forecast availability: ECMWF run usable at run + 8 h, NBM at run + 2 h, Open-Meteo previous_dayN only when
+  valid − 24N h + 8 h ≤ τ. METARs usable at obs time + 10 min in the hourly model; the dead-bucket module works
+  directly in seconds relative to obs time and to AWC receipt time.
+* All bias/sigma estimates use data strictly before the evaluated day; ordinal and stacking models are refit
+  monthly on earlier months only; thresholds and strategies are reported for a full grid with a Jul–Sep holdout.
+* Fills: never at mid. Forecast strategies fill at the VWAP of real taker prints on our side in the 30 minutes after
+  the decision (≤ 50 % of printed size); dead-bucket strategies take real prints at or below a limit (≤ 50 %),
+  i.e. we assume we could have taken half of the liquidity the actual takers took. Fees: 0.05·p·(1−p) per share on
+  all markets with `feesEnabled` (all weather markets since 2026-03-30), maker rebates ignored.
+* Outcomes: official winning bucket from gamma `outcomePrices`; METAR daily max used only for training labels and
+  deaths (it matches the resolution in 99.6–99.8 % of events outside a few problem stations).
+* Not modelled: maker/limit-order strategies (queue position unknown), sub-hourly (1-/5-minute ASOS) data,
+  lowest-temperature markets (8–46 cities, 10x smaller), and the 7-day "erroneous data" resolution delays.
+
+## 9. Code index (`src/weather/`)
+
+| file | purpose |
+|---|---|
+| `nethelp.py`, `common.py` | cached HTTP with back-off; station time zones, date parsing, fee, bar loader |
+| `discover.py`, `slim.py`, `build_markets_table.py`, `stations.py`, `build_events.py` | gamma discovery, market/bucket tables, resolution stations, winners |
+| `fetch_trades.py`, `consolidate_bars.py`, `fetch_raw_d0.py` | data-api taker trades → 10-min YES-equivalent bars; exact target-day prints |
+| `fetch_obs.py`, `obs.py`, `check_resolution.py`, `fetch_receipts.py` | IEM METARs, daily max, METAR vs resolution check, AWC receipt times |
+| `fetch_nbs.py`, `fetch_forecasts.py`, `fetch_forecasts_recent.py`, `fetch_ecmwf.py`, `ecmwf_features.py` | NBM MOS, Open-Meteo previous runs, ECMWF open-data mx2t3 at stations |
+| `features.py`, `market_prices.py`, `market_calib.py`, `volume_profile.py` | decision-time features (no look-ahead), market state at τ, calibration, volume timing |
+| `model.py`, `wf_model.py`, `evaluate.py`, `stack.py`, `backtest.py`, `model_skill.py`, `run_eval.py` | distributions, walk-forward fitting, bucket tables, stacking, fill simulation |
+| `prepeak_eval.py` | §5 pre-peak model, scores and backtests |
+| `near_dead.py`, `near_dead_report.py` | §6 intraday model, scores and backtests (`python near_dead.py` regenerates `near_dead_eval.parquet`) |
+| `deadbucket.py`, `dead_latency.py`, `dead_sim.py`, `dead_receipt.py` (`deadbucket_curves.py` = superseded prototype) | §4 dead-bucket opportunities, latency tables, strategy grid, receipt-time analysis |
+| `wallet_analysis.py`, `fetch_wallets.py` | §4.1 flagged wallets |
+| `live_books.py`, `analyze_books.py` | §3 live order books |
