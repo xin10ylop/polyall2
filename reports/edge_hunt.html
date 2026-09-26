@@ -83,8 +83,8 @@ footer{border-top:1px solid var(--rule);padding-top:16px;font-size:.85rem;color:
     in capacity or needs a data-speed advantage. The results in the table are what the evidence supports.</p>
     <ul>
       <li>Two small, non-speed edges survived out-of-sample: <strong>tweet-count markets for small X accounts</strong>
-      (+18.6% per trade, t 2.3, ≈$10/day) and <strong>selling daily BTC barrier longshots</strong> (+0.7% per trade,
-      both halves positive, ≈$25/day at $1k clips).</li>
+      (+18.6% per trade, t 2.3, ≈$10/day) and <strong>selling daily crypto barrier longshots</strong> (BTC +0.54% per
+      trade with realistic fills, both halves positive, ≈$40–50/day at full capacity).</li>
       <li>The biggest real money for small accounts is in <strong>weather observation-day trading</strong>, but it is a
       60–120-second data race. Public feeds arrive after the edge is gone.</li>
       <li>Liquidity-reward farming is real income, but small uninformed farmers net a median ≈+0.25%/day and lose in
@@ -104,7 +104,7 @@ footer{border-top:1px solid var(--rule);padding-top:16px;font-size:.85rem;color:
     <thead><tr><th>Strategy</th><th>How it was tested</th><th>Result</th><th>Capacity</th><th>Speed needed</th><th>Verdict</th></tr></thead>
     <tbody id="score">
       <tr><td>Tweet counts, small X accounts (Cruz, Khamenei, CZ, NYC Mayor)</td><td>xtracker as-of counts, NegBin model, prints-confirmed fills, Jun–Sep OOS</td><td class="n">+18.6% ROI, t 2.3; event-bootstrap 90% CI +3% to +35%. Lumpy: top 5 events = 66% of P&amp;L</td><td class="n">≈$54/day deployed → ≈$10/day</td><td>No (entries &gt;12 h before end)</td><td><span class="pill p-adopt">adopt · small</span></td></tr>
-      <tr><td>Sell daily BTC barrier longshots (YES 0.5–3¢, ≤12 h left)</td><td>7 months, 1,460 strikes, both halves, real fills</td><td class="n">+0.74%/trade; day-bootstrap 90% CI +0.50% to +0.94%; 4 losses in 1,468 (0.27% vs 0.8% break-even)</td><td class="n">≈3.6 trades/day, ≈$25/day at $1k</td><td>No</td><td><span class="pill p-adopt">adopt · tail risk</span></td></tr>
+      <tr><td>Sell daily crypto barrier longshots (YES 0.5–3¢, ≤12 h left; BTC, SOL, XRP)</td><td>7 months, 5,486 strikes on 4 assets, both halves, fills calibrated on ≈5,000 real prints</td><td class="n">BTC +0.54%/trade (t 6.5), SOL +0.41%, XRP +0.37%, ETH +0.15% (n.s.). A distance filter (x ≥ 4.25, fixed on H1) removed all 3 H2 losses</td><td class="n">≈$10–12k staked/day → ≈$40–50/day, mostly BTC</td><td>No</td><td><span class="pill p-adopt">adopt · tail risk</span></td></tr>
       <tr><td>Weather: buckets killed by the station reading</td><td>40,228 deaths, exact-second prints vs METAR time</td><td class="n">+9% ROI at 60 s; ≈0 at 5 min; negative at 10 min</td><td class="n">$250–540/day if ≤2 min</td><td>Yes: public feed lags 274 s</td><td><span class="pill p-reject">reject · race</span></td></tr>
       <tr><td>Weather: forecast model (D-1, D0 morning)</td><td>ECMWF IFS + NBM, walk-forward, prints-confirmed fills</td><td class="n">Market log-loss 0.220 vs model 0.252; stacking adds nothing; trading loses 2–4%/trade</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
       <tr><td>Weather: intraday "near-dead" probability model</td><td>forecast + running max + hour of day</td><td class="n">Market beats model at every hour 10–19 h; NO buys at 0.80–0.99 return −0.9% (−0.2% holdout)</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
@@ -165,8 +165,8 @@ footer{border-top:1px solid var(--rule);padding-top:16px;font-size:.85rem;color:
 
 <section class="col">
   <h2>What starting with $100 realistically looks like</h2>
-  <p>The two adopted edges together stake about $3.7k a day (barrier trades at ~$1k, tweet trades at the $1–80 the
-  books hold) and earn roughly $35–40 a day. Barrier positions settle within 12 hours, so $2–4k of capital covers it.
+  <p>The two adopted edges together stake about $10–12k a day and earn roughly $50–60 a day. Barrier positions settle
+  within 12 hours, so about $10k of capital covers it, and a single loss costs a full stake.
   From $100, the same rules earn under $1 a day. No tested strategy turns $100 into $100 a day. The wallets that do
   make $100–300 a day on about $1k either win the weather data race with faster feeds, or research niche markets
   by hand every day.</p>

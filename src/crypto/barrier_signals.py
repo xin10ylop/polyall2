@@ -9,7 +9,9 @@ standard deviations (sigma*sqrt(tau), sigma = realised vol of the last 24h of Bi
 or when realised 1h vol is above its trailing-30d 90th percentile.
 
 NO ORDERS ARE PLACED. Usage:
-  python barrier_signals.py [--max-hours 12] [--min-x 0] [--rv-filter] [--all] [--json out.json]
+  python barrier_signals.py [--max-hours 12] [--min-x 3.1] [--rv-filter] [--all] [--json out.json]
+(--min-x 3.1 in this script's 24h-RV units ~ the backtest filter x_model >= 4.25; only daily series, <=12h,
+ YES mid 0.5-3c are backed by the study - weekly/monthly rows are shown for information.)
 """
 import argparse, json, math, sys, time, concurrent.futures as cf
 from datetime import datetime, timezone

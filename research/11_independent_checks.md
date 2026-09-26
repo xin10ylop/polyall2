@@ -18,3 +18,10 @@ time per strike, NO bought at 1 − mid + 0.3 c, fee 0.07·p(1−p)):
   fatter than observed. Per-event exposure cap is mandatory.
 Verdict: robust small edge; ~7 eligible strikes/day; ≈$25/day at $500–1,000 per trade. Implemented as
 `bot/strategies/btc_barrier_no.py` (paper mode running; first paper fill 18:10 UTC: NO ↑86,000 at 0.9949).
+
+### Update after the crypto agent's fill-realism upgrade (research/04 §8)
+Matching ≈5,000 real taker NO fills shows the true cost over (1 − mid) is 0.40–0.65 c for BTC (more for alts), not the
+0.3 c assumed above. Calibrated ROI: BTC +0.54% (t 6.5), SOL +0.41%, XRP +0.37%, ETH +0.15% (n.s.); all daily +0.36%.
+A distance-to-strike filter pre-registered on H1 (skip x < 4.25 σ√τ units) removed all 3 H2 losses with unchanged ROI.
+Capacity ≈ $10–12k staked/day → ≈ $40–50/day. The bot's limit rule (NO ask ≤ 1 − mid + 0.3 c) only takes the cheaper
+subset, so it trades less often than the backtest.

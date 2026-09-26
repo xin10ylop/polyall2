@@ -160,3 +160,58 @@ No robust, non-latency edge after costs. A good spot/vol model is marginally bet
 **Bottom line:** Polymarket's crypto threshold markets are well calibrated relative to a Binance-data/DVOL Student-t model once taker fees (0.07·p(1−p)) and 1–3 c spreads are paid. Everything that looks large (up/down, short-horizon "above") is quote lag that disappears with 1 minute of delay. Two small residuals survive realistic fills: (i) selling 0.5–3 c daily-barrier longshots (+0.7 %/trade, ≈$25/day at the book depth available, tail-crash risk), and (ii) model-based trading of newly listed (4–7 days out) BTC "above" strikes (+10–12 % OOS but t≈2.5, directional, ≈$10–40/day). Neither justifies capital beyond a paper-trading / small live pilot.
 
 Artifacts: `src/crypto/` (fetch_events, fetch_spot, fetch_pm_history, parse_markets, volmodel, train_samples, walkforward, panel, evaluate, prereg, report_above, analyze_above/range/touch/updown, implied, live_books, compact); cached panels in `data/crypto/panel_*.parquet`, detailed tables in `data/crypto/report_above_BTC.md`, `data/crypto/report_range_BTC.md`, live book snapshot `data/crypto/live_books_20260926T1409.parquet`.
+
+## 8. Follow-up: barrier longshot sale — cross-asset replication, loss filter, live scanner
+
+Code: `src/crypto/barrier_panels.py` (panels, decision times W1−{24,18,12,6,3,1} h), `barrier_study.py` (tables/filters), `barrier_signals.py` (live read-only scanner), `fetch_barrier.sh`. Panels `data/crypto/panel_touch_<ASSET>_barrier.parquet` (BTC 19.7k, ETH 18.1k, SOL 15.1k, XRP 14.2k rows; every outcome reproduces from Binance 1m highs/lows, 0 mismatches). Windows still open, multi-month events and a few "dip to 0" strikes excluded.
+
+**Fill realism upgrade.** The §4 table priced NO at 1 − mid + 0.3 c. Matching ≈5,000 real taker NO-buy/YES-sell fills in (t+1 min, t+15 min] to the mid shows the actual cost over (1 − mid) is much larger for alts and wider tails, because deep-OTM YES books are one-sided (e.g. bid 0.1 c / ask 1 c ⇒ mid 0.55 c but NO ask 99.9 c). Median effective cost (H1 estimate, used for all rows without a real fill; real fill price used where one exists):
+
+| YES mid | BTC | ETH | SOL | XRP |
+|---|---:|---:|---:|---:|
+| 0.5–1 c | 0.40 c | 0.45 c | 0.45 c | 0.50 c |
+| 1–2 c | 0.51 c | 0.95 c | 1.00 c | 1.25 c |
+| 2–3 c | 0.65 c | 1.25 c | 1.55 c | 1.70 c |
+| 3–4.5 c | 0.80 c | 1.77 c | 2.20 c | 2.50 c |
+
+### 8.1 Replication (rule: untouched strike, ≤12 h to window end, YES mid 0.5–3 c, buy NO, fee included; H1 = before 2026-06-15, H2 = after)
+
+| asset / family | rows | strikes | events | loss rows (days) | ROI (calibrated fills) | H1 ROI | H2 ROI | one trade per strike | t (event-clustered) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| BTC daily | 2,353 | 1,458 | 201 | 5 (4) | **+0.54 %** | +0.39 % | +0.73 % | +0.59 % | 6.5 |
+| ETH daily | 2,921 | 1,512 | 197 | 11 (10) | +0.15 % | +0.07 % | +0.27 % | +0.13 % | 0.0 |
+| SOL daily | 3,008 | 1,236 | 197 | 2 (2) | +0.41 % | +0.31 % | +0.50 % | +0.37 % | 8.0 |
+| XRP daily | 2,988 | 1,280 | 196 | 1 (1) | +0.37 % | +0.30 % | +0.44 % | +0.38 % | 3.8 |
+| **all daily** | 11,270 | 5,486 | ~200/asset | 19 (13) | **+0.36 %** | +0.26 % | +0.48 % | +0.36 % | 5.1 |
+| weekly + monthly, last ≤12 h (4 assets) | 1,562 | 771 | — | 11 (6) | −0.05 % | −0.29 % | +0.62 % | −0.08 % | −0.5 |
+| weekly + monthly, 12–24 h left | 1,417 | 885 | — | 15 (8) | −0.40 % | −0.55 % | +0.06 % | −0.57 % | −1.7 |
+| daily, 12–24 h left (before/at window open) | 3,864 | — | — | 18 | BTC −0.35 %, ETH −0.06 %, SOL +0.37 %, XRP +0.30 % | | | | |
+| 3–6 c YES, daily ≤12 h | 2,155 | 1,603 | — | 46 (33) | −0.05 % | −0.28 % | +0.26 % | −0.23 % | −0.6 |
+| 3–6 c YES, weekly/monthly ≤12 h | 225 | 162 | — | 8 (6) | −0.83 % | | | | |
+
+* The anomaly **replicates on all four daily series and in both halves**, but after realistic fills it is **+0.36 % per trade overall** (BTC +0.54 %, SOL/XRP ≈ +0.4 %, ETH ≈ +0.15 % and not significant). With the naive 0.3 c cost it would have looked like +0.8 %.
+* It does **not** carry over to the last 12–24 h of daily windows, to weekly/monthly windows (≈0 / negative; their tails are *under*-priced, consistent with §4), or to the 3–6 c band (break-even or worse). Keep the rule narrow: daily barrier, ≤12 h left, 0.5–3 c.
+* Share of rows with an actual fill in the 15-min window: BTC 48 %, ETH 22 %, SOL 9 %, XRP 7 %. For SOL/XRP the result therefore rests mostly on the calibrated cost model.
+
+### 8.2 Do losses cluster on high-vol days? Pre-registered filter
+* 19 losing rows on 13 days (ETH 11). Losses cluster **across assets on the same day** (7-Apr: BTC+ETH+SOL; 16-Mar: BTC+ETH; 4-May: BTC+SOL), i.e. crypto-wide moves. They are only weakly concentrated in high realised vol: 16 % of losses vs 11 % of rows in the top decile of 1h RV, and 5 % vs 4 % for DVOL. Vol-regime filters therefore do not help. In H1 they cut losses 16→14 but lowered PnL, and were not selected.
+* Losses **are** concentrated at small distance-to-strike in σ√τ units. Here x = |ln(H/S)| / (walk-forward t-model scale); losses have median x ≈ 4.1 vs 8.3 for all eligible rows.
+* Candidate filters: 1h-RV top decile, DVOL top decile, either of the two, x < {2, 2.5, 3, 3.5}, model p ≥ mid or ≥ ½·mid, and x below the H1 10th/25th percentile. Disclosure: the last few candidates (x-quantile and model-based) were added after seeing that the original x grid sat below almost all eligible rows. Each filter was ranked by H1 PnL; the winner was **skip if x < 4.25 (the H1 10th percentile)**.
+
+| filter | H1 rows kept | H1 losses | H1 ROI | H2 rows kept | H2 losses | H2 ROI |
+|---|---:|---:|---:|---:|---:|---:|
+| none | 100 % | 16 | +0.26 % | 100 % | 3 | +0.48 % |
+| **x < 4.25 (pre-registered on H1)** | 90 % | 8 | +0.31 % | 89 % | **0** | +0.46 % |
+| RV1h top decile | 88 % | 14 | +0.24 % | 90 % | 2 | +0.48 % |
+| DVOL top decile | 93 % | 15 | +0.25 % | 100 % | 3 | +0.48 % |
+
+  Out of sample, the filter removed all 3 H2 losses and kept 89 % of the volume, but ROI was unchanged (+0.46 % vs +0.48 %). It is a **tail-risk reducer, not a return enhancer**. With it (one trade per strike, all assets): 4,403 trades, 5 losses, +0.41 %.
+
+### 8.3 Capacity (live books 2026-09-26 18:21 UTC, 9.7 h left on the daily events) and economics
+* Eligible strikes per day (first eligible time): BTC 3.6, ETH 3.7, SOL 3.1, XRP 3.2. Median NO-side taker flow from the decision time to expiry per strike: BTC $6.7k, ETH $0.95k, SOL $155, XRP $160.
+* Live NO depth within 0.3 c of the ask on eligible daily strikes: BTC $490–6,400 (NO ask 98.0–99.5 c), ETH ≈ $3.1–3.3k but at 99.7 c (0.28 % if untouched), XRP ≈ $300 at 99.8 c (0.19 %). Many strikes with a 0.5–1 c YES mid have NO asks of 99.9 c (a 0.09 % payoff), which the scanner correctly ranks as worthless.
+* **Combined capacity ≈ $10–12k deployed per day** (BTC ≈ $7k, ETH ≈ $3k, SOL+XRP ≈ $1k). That is **≈ $40–50/day expected (≈ $15–18k/yr)**, almost all from BTC. The payoff is short-tailed: a loss costs the full stake, and the worst day hit 3 strikes across assets.
+* **Verdict:** real and robust, but a small carry trade. BTC daily is worth running only as an automated, filtered (x ≥ 4.25), small-size sleeve. ETH is marginal after costs, and SOL/XRP capacity is too thin to matter.
+
+### 8.4 Live scanner
+`python src/crypto/barrier_signals.py [--max-hours 12] [--min-x 4.25] [--rv-filter] [--all] [--json out.json]` lists every open daily/weekly/monthly BTC/ETH/SOL/XRP barrier strike that is untouched and within the time limit. For each it shows the YES mid, the NO ask (from the NO book, or 1 − YES bid), NO depth within 0.3 c / 1 c, the fee, the ROI if untouched, the break-even touch probability, and x = distance / (24h realised σ·√τ). Rows are flagged when x < min-x or when 1h RV is above its 30-day 90th percentile. It only reads data and never places orders. Its x uses a plain 24h-RV σ rather than the backtest's t-model scale. On the panel, model-x / (dist ÷ RV24·√τ) has a median of 1.37 (IQR 1.18–1.63), so the backtest filter x ≥ 4.25 corresponds to **`--min-x 3.1`** in scanner units (approximate).
