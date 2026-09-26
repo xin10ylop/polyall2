@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from common import taker_fee_per_share
 
-HALF_SPREAD = {"D-1 12h": 0.01, "D0 07h": 0.015, "D0 11h": 0.02, "D0 14h": 0.02, "D0 16h": 0.02, "D0 18h": 0.02}
+HALF_SPREAD = {"D-1 12h": 0.01, "D0 07h": 0.015, **{f"D0 {h:02d}h": 0.02 for h in range(10, 20)}}
 
 
 def market_probs(B, max_age_h=12.0, floor=0.002):

@@ -1,7 +1,7 @@
 """Station-day decision-time features (all days with observations, not just market days, so that
 walk-forward bias/sigma estimates have history before markets existed).
 
-Decision times (station local clock): D-1 12:00, D-0 07:00, 11:00, 14:00, 16:00, 18:00.
+Decision times (station local clock): D-1 12:00, D-0 07:00, and hourly D-0 10:00..19:00.
 No look-ahead rules:
   * NBM (US only): latest NBS run with runtime + 2h <= tau (NBM text products are out ~1h after cycle).
   * Open-Meteo previous_dayN (when available): for valid hour t use smallest N with t - 24N h + 8h <= tau.
@@ -13,7 +13,7 @@ import pandas as pd
 from common import D, TZ, c2f
 from obs import load_obs
 
-DECISIONS = [("D-1 12h", -1, 12), ("D0 07h", 0, 7), ("D0 11h", 0, 11), ("D0 14h", 0, 14), ("D0 16h", 0, 16), ("D0 18h", 0, 18)]
+DECISIONS = [("D-1 12h", -1, 12), ("D0 07h", 0, 7)] + [(f"D0 {h:02d}h", 0, h) for h in range(10, 20)]
 OBS_LAG = pd.Timedelta(minutes=10)
 NBM_LAG = pd.Timedelta(hours=2)
 OM_LAG = pd.Timedelta(hours=8)
@@ -145,8 +145,18 @@ def build(only=None):
     return pd.concat(out) if out else None
 
 
+def _one(icao):
+    return build([icao])
+
+
 if __name__ == "__main__":
     os.makedirs(f"{D}/feat", exist_ok=True)
     only = sys.argv[1:] or None
-    F = build(only)
-    print(F.shape)
+    if only:
+        F = build(only); print(F.shape)
+    else:
+        from multiprocessing import Pool
+        R = pd.read_parquet(f"{D}/events_resolved.parquet")
+        st = sorted(set(R[(R.kind == "highest") & R.clean & R.icao.isin(list(TZ))].icao) - {"HKO", "CWA46692"})
+        with Pool(3) as p:
+            p.map(_one, st)

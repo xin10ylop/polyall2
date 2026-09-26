@@ -1,6 +1,6 @@
 # 06 — Tweet-count ("# of posts") markets: model-based taker edge?
 
-Status: IN PROGRESS (written incrementally). Code: `src/tweets/`. Data cache: `data/tweets/`.
+Status: COMPLETE (2026-09-26). Code: `src/tweets/`. Data cache: `data/tweets/`.
 Date of study: 2026-09-26.
 
 ## 1. Data sources and what they really contain
@@ -150,3 +150,115 @@ OOS (Jun–Sep), mean log-loss per snapshot (lower is better), model − market:
 * The model "beats" the market only on thin accounts (NYC Mayor, Khamenei, Cruz/CZ at long horizons) — where
   mids of 20–70 c-wide books are not prices anyone can trade at (Section 6).
 
+## 5. Trading-rule backtests (taker only, held to resolution)
+
+Rule: buy YES on bucket k if `q_k − (ask + fee) > θ`; buy NO if `(1 − q_k) − (NO ask + fee) > θ`;
+first signal per (event, bucket, side) only; optional minimum time-to-end `hmin`. Grid: side ∈ {YES, NO, both} ×
+θ ∈ {0.03, 0.05, 0.10} × hmin ∈ {0, 12, 48 h} = 27 configs per account group and fill model. The config was
+**selected on IS (event-clustered t)** and then reported OOS. Full grids: `data/tweets/elon_grid.csv` (fill A),
+`data/tweets/grid_fillB.csv` (fill B). Trump and outage-affected events are excluded from the headline numbers.
+
+### 5.1 Fill model A (mid + ≥1 c + fee), for reference only
+In-sample the Elon rules look excellent (e.g. NO, θ = 0.02–0.05: t ≈ 4, YES θ = 0.05: ROI +43 %), and 89/90
+configs stay positive OOS on an equal-weight basis. But (i) the OOS t-stats fall to 0.5–2.4, (ii) when each trade
+is capped at 25 % of the prior 6 h lift/hit volume at that price, OOS PnL is ≈ 0 or negative for most configs
+(the ROI comes from tiny long-shot fills), and (iii) for thin books the mid is not a tradable price. Fill A
+overstates executability; fill B below is the honest number.
+
+### 5.2 Fill model B (print-confirmed, size capped by the confirming print) — headline
+
+| | Elon (IS-best: NO, θ=0.03, hmin 12 h) | Small X accounts (IS-best: both sides, θ=0.10, hmin 12 h) |
+|---|---|---|
+| IS (≤ May-2026): trades / events | 733 / 114 | 160 / 50 |
+| IS size-wt ROI ($200 cap) / week-clustered t | +8.0 % / 1.9 | +59 % / 1.5 |
+| **OOS (Jun–Sep 2026): trades / events** | **375 / 87** | **604 / 188** |
+| OOS hit rate / avg entry price | 0.79 / 0.77 | 0.51 / 0.41 |
+| OOS ROI per trade, equal weight | +1.4 % | +37.6 % |
+| OOS $10 target: deployed / PnL | $2.1k / +$133 | $3.3k / +$1,079 |
+| OOS $50 target: deployed / PnL | $4.5k / +$265 | $5.5k / +$1,321 |
+| OOS $200 target: deployed / PnL (ROI) | $6.2k / +$267 (+4.3 %) | $6.2k / +$1,160 (+18.6 %) |
+| OOS max drawdown ($200 target) | $317 | $175 |
+| OOS week-clustered t (size-weighted) | **0.5** | **2.3** (equal-wt 3.1) |
+| Deployable capital (target $200) | ≈ $55/day | ≈ $54/day |
+
+(Deployed amounts fall short of the $10/$50/$200 targets because each fill is capped at the size of the print
+that confirms the price.)
+
+* **Elon: no robust executable edge.** Across the 27 fill-B configs, OOS size-weighted ROI runs from −39 % to
+  +20 % with no config reaching t = 2. YES-side rules (buying buckets the model rates above the market) lose
+  money OOS when weighted by size. NO-side rules earn +2 to +20 % with t ≈ 1–1.5, which is not distinguishable
+  from zero given 27×2 configs. The IS edge (t ≈ 3–5) decays OOS, the classic overfit / regime pattern (Elon's
+  rate fell from 69/day to 29/day across the sample).
+* **Small X accounts: small, statistically plausible, but economically trivial.** Every one of the 27 fill-B
+  configs is positive OOS (size-weighted ROI +6 to +31 %, event-clustered t 2.1–3.7). It holds in each OOS month
+  (Jun +11 %, Jul +43 %, Aug +6 %, Sep +16 %). By account (OOS, $200 target): Cruz +54 %, Khamenei +44 %,
+  CZ +30 %, NYC Mayor +23 %, Zelenskyy +7 %, **White House −19 %**. It is not a latency effect: most of the PnL
+  comes from entries more than 96 h before the end (+23 %) and 12–24 h (+59 %). The 24–96 h entries are ≈ 0.
+  Caveats: the fills come from books with 20–70 c spreads; the confirming print may be the same
+  liquidity another taker already took (so fill size could be optimistic by up to 2×); and the IS sample
+  (50 events) is too small to have selected the config with confidence.
+* **Trump** (flagged, not in headline): OOS +12 % size-weighted, t 0.5; tracker failures make the model's
+  C(t) unreliable. Not tradable with an xtracker-based model.
+
+### 5.3 Edge vs time-to-end (latency)
+* Elon, fill A, every signal: last-hour entries are erratic (IS −32 %, OOS +102 % on 31 trades). 1–3 h is
+  negative OOS (−22 %). Nothing consistent inside 24 h.
+* With the xtracker count, the model is **worse** than the market in the last 6 h for Elon/WH/Zelenskyy/Cruz
+  (Section 4.1). With an own-X-monitor count (createdAt-based, "loose" variant), Elon's last-hour log-loss
+  becomes slightly better than the market's (0.183 vs 0.200); all other horizons are unchanged. So the only
+  model-vs-market advantage near the end is **pure latency** (seeing posts minutes before xtracker / other
+  traders), and at least one competitor already sells a faster alert tool. Flagged, not pursued.
+
+## 6. Executability — live books (snapshot 2026-09-26 14:17 and 14:54 UTC, `data/tweets/books/`)
+
+| account | live buckets (0.02 < price < 0.98) | median spread | median ask depth within 1 c / 5 c |
+|---|---:|---:|---|
+| elonmusk | 36 | **1.0 c** | $130 / $560 (central buckets $200–1,800 within 2 c) |
+| NYCMayor | 6 | 3.5 c | ~$170 / ~$330 |
+| cz_binance | 8 | 6.5 c | ~$60 / ~$80 |
+| realDonaldTrump | 16 | 5.5 c | ~$40 |
+| WhiteHouse | 4 | 22 c | ~$30 |
+| khamenei_ir | 1 | 26 c | ~$20 |
+| ZelenskyyUa | 8 | 28 c | ~$4 |
+| tedcruz | 10 | 35 c | ~$7–11 |
+
+* Elon books are tight and deep enough for $200–1,000 clips in central buckets, but the backtest finds no
+  model edge there.
+* Small-account books are where the model disagrees with the mid. Live example (14:54 UTC): the model gives
+  Cruz 80–99 (Sep 25–Oct 2) q = 0.28 against an ask of 0.17, but only **$3.40** is offered within 2 c. The model
+  gives Zelenskyy 120–139 q = 0.13 against an ask of 0.041, with **$0.94** offered. These books cannot absorb
+  even a $50 order without walking 10–30 c.
+* Live Elon discrepancies exist too (e.g. Sept-monthly 800–839: model 0.34 vs ask 0.18; 48 h Sep 26–28 `<40`:
+  model 0.35 vs ask 0.20). Per 5.2, discrepancies of this type did not pay OOS, so they should not be traded
+  on this model.
+
+## 7. Conclusions
+
+1. **Data**: xtracker exposes every post with `importedAt`, so no-look-ahead reconstruction is possible. For
+   X accounts, the final xtracker count reproduces 100 % of resolutions (excluding archived duplicate events).
+   However, ~3 % of Elon/WH/Cruz windows get back-filled after the close, and there are multi-hour to
+   multi-day global import stalls. Truth Social (Trump) tracking is unreliable (71 % match).
+2. **Model**: a profile-adjusted EWMA + negative-binomial model is roughly calibrated walk-forward, and for
+   Elon it matches the market's forecast quality at every horizon beyond 6 h. It is worse than the market near
+   the close, because the market sees posts before xtracker does.
+3. **Elon (the only liquid market)**: **no exploitable executable edge** after spread, the exact 0.05·p(1−p)
+   fee, and print-confirmed fills. IS-selected rules have OOS t ≈ 0.5.
+4. **Small accounts (Cruz, Khamenei, CZ, NYC Mayor, Zelenskyy; not WH)**: a consistent OOS edge
+   (+19 % size-weighted, t ≈ 2.3). It is available days before the end, so it is not a latency game.
+   **Capacity is ~$50/day deployed, ≈ $10/day PnL** across all of them, in books with $1–$80 of depth. This is
+   a hobby-scale edge, and the fill model is probably optimistic there.
+5. The only other "edge" found is last-minutes latency (own X monitoring vs xtracker lag), which is a speed
+   race with existing specialised competitors. Not recommended.
+
+**Verdict: no scalable executable edge in tweet-count markets with this model.**
+
+### Reproduce
+```
+python3 src/tweets/fetch_xtracker.py ; python3 src/tweets/fetch_gamma.py ; python3 src/tweets/build_events.py
+python3 src/tweets/fetch_trades.py 8 ; python3 src/tweets/fetch_prices.py 6
+python3 src/tweets/calibrate.py ; python3 src/tweets/walkforward.py ; python3 src/tweets/calib_summary.py
+python3 src/tweets/bt_build.py 4 ; python3 src/tweets/bt_prints.py 3      # decision tables (strict) + fill B
+BT_MODE=loose python3 src/tweets/bt_build.py 3                             # needs calibrate.py loose + walkforward.py _loose
+python3 src/tweets/live_books.py ; python3 src/tweets/live_signals.py      # live books / live model check
+# analysis: functions in src/tweets/bt_eval.py (load, trades, summarize, load_pc, trades_b, summarize_b, snapshot_scores)
+```

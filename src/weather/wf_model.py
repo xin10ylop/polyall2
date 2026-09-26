@@ -13,7 +13,7 @@ import pandas as pd
 from model import rolling_stats, NU
 
 PRE = ("D-1 12h", "D0 07h")
-INTRA = ("D0 11h", "D0 14h", "D0 16h", "D0 18h")
+INTRA = tuple(f"D0 {h:02d}h" for h in range(10, 20))
 SIG_FLOOR = {"F": 1.2, "C": 0.7}
 
 

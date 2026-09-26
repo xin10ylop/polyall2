@@ -1,6 +1,6 @@
 # 04 — Polymarket crypto price-threshold markets: model vs market, non-latency edge?
 
-*Status: IN PROGRESS (written incrementally). Date of analysis: 2026-09-26.*
+*Status: COMPLETE. Date of analysis: 2026-09-26.*
 Code: `src/crypto/`. Cached data: `data/crypto/` (not committed).
 
 ## 0. Scope and data inventory
@@ -130,3 +130,33 @@ No robust, non-latency edge after costs. A good spot/vol model is marginally bet
 
   Break-even loss rate ≈ 0.8–0.9 %; the Poisson 95 % upper bound on the observed rate (4–5 losses) is ≈0.45 %, so the bias is statistically solid (it is symmetric across ↑/↓ strikes: ROI +0.65 % / +0.75 %). The 4 loss events were distinct days (15-Mar, 7-Apr, 3-May, 3-Jun-2026). Real taker fills in (t+1 min, t+15 min] confirm fill prices within ≈0.1 c of the assumption; the NO book is the mirror of the YES book (NO ask = 1 − YES bid), and live books show 400–3,800 NO shares within 0.3 c of the touch on each of these strikes.
   **Economics:** ≈3.6 eligible strikes/day, ≈0.7 % per trade, held ≤12 h → $50/trade ≈ $1.3/day, $200 ≈ $5/day, $1,000 ≈ $27/day (≈$10k/yr) with single-loss drawdowns equal to one full stake. Classic short-tail profile (one crash day can hit several strikes at once); the sample (7 months) contains no flash crash like 10-Oct-2025.
+
+
+## 5. Family (d): Up/Down (hourly, 15-minute)
+
+* Rules: hourly = Binance 1h candle close ≥ open; 15m/5m/4h = **Chainlink BTC/USD (TWAP) stream**, not Binance (Binance terminal-vs-open reproduces 97.4 % of 15m, 98.9 % of hourly, 90 % of 5m outcomes). Taker fee 0.07·p(1−p) (1.75 c/share at 50 c) since March 2026.
+* Panel: 4,693 hourly markets (2026-03-14 → 09-26) and a random 3,998 of the 15m markets (2026-06 → 09), YES mid from 1-min price history at fixed offsets inside the window. Model: P(Up) = P(S_T ≥ S_open | S_t) with the walk-forward t-scale for the remaining minutes.
+* Before the window opens the market is ≈50/50 and fair (buying either side at mid+1 c: −9 % to −16 % after fees). Inside the window the spot model beats the mid in log-loss (e.g. 15m at +5 min: 0.552 vs 0.576), and a θ=3 c rule "earns" +5 % … +23 % ROI if filled at the mid observed at t. **With a 1-minute execution delay every cell collapses to −4.4 % … +0.8 %** (3-min delay similar). The apparent edge is purely the market's quote lag behind Binance/Chainlink spot — a latency trade, excluded by mandate (and the 1-min mid series itself is a lagged sample).
+* **Verdict: no non-latency edge.**
+
+## 6. Robustness add-ons
+
+* **ETH daily "above"** (same pipeline, 4,105 strikes/horizon): model LL better than market at ≤12 h, worse at 72–120 h. Pre-registered combo/θ=3 c: train +8.6 % (t 1.9) → **test −1.6 % (t −0.8)**, −6.4 % with 5-min delay. No edge. SOL/XRP not modelled further: their mid-range spreads are 7–10 c (live books), larger than any model-market gap observed for BTC/ETH.
+* **BTC "above", freshly listed events (h = 96/144/160 h; horizons chosen *after* seeing §2's h=120 pocket — treat as semi-post-hoc):** combo/θ=3 c, cost 3 c from mid: 1,554 trades, ROI +7.0 % (t_cl 3.5); train +4.5 % (t 2.6), **test +11.8 % (589 trades, t 2.6), +10.0 % with 5-min delay, +12.3 % with real fills**. But the test P&L is directional: YES side +17 % (t 2.5) vs NO side +4.7 % (t −0.7), and August 2026 (BTC +25 % rally) alone contributes 100 trades at +61 %. Consistent with the model's zero-drift fair value beating a market that anchors to the listing price, but indistinguishable from "long BTC in a rally" over 7 months.
+* Hourly "above" markets (70,920 strikes since 2026-03): median event volume ≈ $2k, live books 2–7 c wide with <$150 depth → not investable regardless of model quality; not backtested.
+
+## 7. Final verdict
+
+| Family | Model vs market (OOS log-loss) | Best non-latency rule, OOS (fee era ≥2026-03 unless noted) | Survives 5-min delay / real fills? | Capacity | Verdict |
+|---|---|---|---|---|---|
+| (a) BTC daily "above", 0.5–72 h | model ≈ market (±1–3 %) | pre-reg θ=3 c: +5.6 %, t 1.5 (394 trades) | +1.9 % / +6.4 % | $50–200/trade, ~2 trades/day | no robust edge |
+| (a) BTC daily "above", 96–160 h after listing | model better (LL −1 to −3 %) | +11.8 %, t 2.6 (589 trades); h=120 walk-forward pick +14.5 %, t 2.1 | yes (+10 % / +12 %) | 3–4 c spreads, $1–7k within 5 c per strike; ~3 trades/day × $50–200 ≈ $10–40/day | **fragile/possible**: directional (long-YES in Aug-26 rally), semi-post-hoc; paper-trade only |
+| (a) ETH/SOL/XRP daily "above" | ETH mixed; SOL/XRP spreads 7–10 c | ETH −1.6 % | no | thin | no edge |
+| (c) BTC range buckets | model ≈ market | pre-reg +6.8 %, t 0.7; overround 1–5 % not capturable | −1.3 % (delay) | thin buckets | no edge |
+| (b) weekly/monthly touch | market ≥ model | −2 % … +5 %, |t|<1 | no | deep (monthly $M volume) | no edge |
+| (b) **daily touch, sell 0.5–3 c longshots (≤12 h left)** | market over-prices far barriers 3–10× | **+0.7 % per trade**, 5 losses / 2,381 rows, both halves positive (+0.57 % / +0.86 %), t_ev≈8 | yes (real fills +0.63 %, delay +0.69 %) | ~3.6 strikes/day; 400–3,800 NO shares within 0.3 c live → ≈$1k/trade ⇒ ≈$25/day | **only robust anomaly, economically tiny**, short-tail risk |
+| (d) up/down hourly/15m | model ≫ market *at t* | +5…+23 % at t-mid | **no**: −4 %…+1 % with 1-min delay | — | latency only |
+
+**Bottom line:** Polymarket's crypto threshold markets are well calibrated relative to a Binance-data/DVOL Student-t model once taker fees (0.07·p(1−p)) and 1–3 c spreads are paid. Everything that looks large (up/down, short-horizon "above") is quote lag that disappears with 1 minute of delay. Two small residuals survive realistic fills: (i) selling 0.5–3 c daily-barrier longshots (+0.7 %/trade, ≈$25/day at the book depth available, tail-crash risk), and (ii) model-based trading of newly listed (4–7 days out) BTC "above" strikes (+10–12 % OOS but t≈2.5, directional, ≈$10–40/day). Neither justifies capital beyond a paper-trading / small live pilot.
+
+Artifacts: `src/crypto/` (fetch_events, fetch_spot, fetch_pm_history, parse_markets, volmodel, train_samples, walkforward, panel, evaluate, prereg, report_above, analyze_above/range/touch/updown, implied, live_books, compact); cached panels in `data/crypto/panel_*.parquet`, detailed tables in `data/crypto/report_above_BTC.md`, `data/crypto/report_range_BTC.md`, live book snapshot `data/crypto/live_books_20260926T1409.parquet`.
