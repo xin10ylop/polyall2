@@ -97,3 +97,36 @@ Test-period breakdown by horizon (mid0): only h=120 h is individually notable (1
 
 ### 2.5 Verdict on family (a) (BTC)
 No robust, non-latency edge after costs. A good spot/vol model is marginally better than the market mid, and a pre-registered model-vs-market rule earned +5 % per $ over 12 months (t≈2.6), but only +1.9–6.4 % (t 1.1–1.7) in the out-of-sample fee era, and ~60 % of the edge disappears if execution is 5 minutes late (the market converges toward spot-implied fair value within minutes — a latency component). The one surviving pocket is **5-days-ahead (T−120 h) pricing** (~0.6 trades/day, +10–15 % ROI, t≈2): markets that were just listed, have 3–4 c spreads and a few $k of depth per strike. Capacity ≈ $50–200 per trade, i.e. ≲ $100/day deployed, expected profit of order $5–20/day — economically negligible and statistically fragile.
+
+## 3. Family (c): "Bitcoin price on <date>" range buckets (neg-risk, noon ET)
+
+* 374 events / 4,042 buckets (2025-09 → 2026-09), 11 buckets of $2k plus two open tails; 36,356 panel rows; all outcomes reproduce from Binance (0 mismatches). Model bucket probability = difference of two walk-forward t-model CDFs.
+* **Overround:** Σ YES mids per event averages 1.008–1.014 within 6 h of expiry and 1.024–1.053 at 24–120 h — the excess sits in the cheap buckets (≤5 c buckets: priced 3.2 c, model 2.2–2.6 c, realised 1.4–2.4 %). Live books show 1.5–8 c spreads on those buckets, so the overround is not harvestable by a taker.
+* Log-loss: model ≤ market at 0.5–1 h and 24–120 h, market better at 3–12 h (e.g. h=120: 0.2630 (rv) vs 0.2674; h=3: 0.1260 market vs 0.1276).
+* Backtests (same rules/costs as §2.4): **pre-registered combo/θ=3 c: ROI +2.9 % (t_cl 0.6) over 1,000 trades; test period +6.8 % (t 0.7); with 5-min delayed execution −1.3 %**. Walk-forward top-5 train configs all fail OOS (e.g. h=6/rv/3 c: train +27 % → test +3 %/−9 %). Across 105 configs: median test ROI +5.4 %, 58 % positive, 5 % with t>2 (≈ noise).
+* **Verdict: no edge.**
+
+## 4. Family (b): touch / barrier markets ("What price will Bitcoin hit …?")
+
+* Model: remaining-horizon scale from the walk-forward t-model; P(hit) = empirical survival of the standardised running extreme |max ln(S_u/S_t)|/s over (t, t+h], pooled up/down, estimated on training windows before the decision month (plus a reflection-principle benchmark 2·P(S_T>H)). Decision times: daily at 16:00 UTC while the strike is untouched + W1−{12,6,3,1} h. Windows reconstructed from the rules (ET calendar windows; "…-from-<date>" re-listings start at creation) — outcomes reproduce from Binance highs/lows for all 28,338 rows.
+* **Data-hygiene catch:** events whose window has not ended (only *already-hit* strikes are closed → 100 % YES) and multi-month events ("…before-2027", "…in-2025") must be excluded; left in, they create a spurious "monthly touch probabilities are 30 % too low" result (z≈6). Clean sample: daily 201 events/2,871 strikes (Mar–Sep 2026 only; the daily series barely existed before), weekly 62 events/832, monthly 18 events/328.
+
+| family | LL market | LL model (empirical) | LL model (reflection) | calibration notes |
+|---|---:|---:|---:|---|
+| daily | 0.0451 | 0.0440 | **0.0438** | strikes priced 0.3–3 c are touched far less than priced (see below) |
+| weekly | **0.1454** | 0.1469 | 0.1500 | 1–7 c strikes slightly *under*-priced (1.8 %→3.0 %, z 2.8; 4.6 %→6.2 %) |
+| monthly | **0.1767** | 0.1871 | 0.1863 | no bin significant (18 events) |
+
+* **Model-vs-market trading** (θ 2–5 c, costs 0.3 c / 1 c / 1.75 c from mid for tails / 3–10 c / mid-range — tighter than §2 because live touch books quote 0.2–1.5 c spreads): daily −1.8 % … +4.3 %, weekly −1.8 % … +1.8 %, monthly −2.2 % … +4.9 % ROI, all |t_cl| < 1 (and negative with 5-min delay). The market is at least as good as the model for weekly/monthly barriers.
+* **Daily-barrier longshot bias (the one robust anomaly found).** Strikes whose YES mid is 0.5–3 c with ≤12 h left:
+
+| subset | rows | events | touched (loss) | priced prob. | realised | ROI buying NO at 1−mid+0.3 c, fee incl. |
+|---|---:|---:|---:|---:|---:|---:|
+| mid 0.3–1 c | 2,742 | 201 | 1 | 0.53 % | 0.04 % | +0.19 % (real fills +0.20 %) |
+| mid 1–3 c | 1,241 | 200 | 4 | 1.77 % | 0.32 % | +1.07 % (real fills +0.94 %; +0.41 % if cost is 1 c) |
+| mid 0.5–3 c, H1 (Mar–Jun 14) | 1,350 | 104 | 5 | 1.3 % | 0.37 % | +0.57 % |
+| mid 0.5–3 c, H2 (Jun 15–Sep) | 1,031 | 98 | 0 | 1.2 % | 0.00 % | +0.86 % |
+| one trade per strike (first eligible time) | 1,460 | — | 4 | — | 0.27 % | +0.74 % |
+
+  Break-even loss rate ≈ 0.8–0.9 %; the Poisson 95 % upper bound on the observed rate (4–5 losses) is ≈0.45 %, so the bias is statistically solid (it is symmetric across ↑/↓ strikes: ROI +0.65 % / +0.75 %). The 4 loss events were distinct days (15-Mar, 7-Apr, 3-May, 3-Jun-2026). Real taker fills in (t+1 min, t+15 min] confirm fill prices within ≈0.1 c of the assumption; the NO book is the mirror of the YES book (NO ask = 1 − YES bid), and live books show 400–3,800 NO shares within 0.3 c of the touch on each of these strikes.
+  **Economics:** ≈3.6 eligible strikes/day, ≈0.7 % per trade, held ≤12 h → $50/trade ≈ $1.3/day, $200 ≈ $5/day, $1,000 ≈ $27/day (≈$10k/yr) with single-loss drawdowns equal to one full stake. Classic short-tail profile (one crash day can hit several strikes at once); the sample (7 months) contains no flash crash like 10-Oct-2025.

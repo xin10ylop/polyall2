@@ -20,7 +20,7 @@ def main():
     R = R[(R.kind == "highest") & R.clean & R.icao.isin(list(TZ))]
     R["date"] = pd.to_datetime(R.date, errors="coerce")
     pairs = R.dropna(subset=["date"]).groupby(["icao", "unit"]).size().reset_index()[["icao", "unit"]]
-    runs = np.array(sorted(E.run.unique()))
+    runs = np.array(sorted(E.run.dt.tz_convert(None).unique()), dtype="datetime64[ns]")
     avail = runs + np.timedelta64(8, "h")
     rows = []
     d0, d1 = E.run.min().normalize() + pd.Timedelta(days=2), E.run.max().normalize() + pd.Timedelta(days=2)

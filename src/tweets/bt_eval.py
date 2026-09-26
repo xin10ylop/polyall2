@@ -75,10 +75,12 @@ def summarize(x, stakes=(10, 50, 200), cap_frac=0.25):
     for st in stakes:
         pnl = st * x.ret
         r[f"pnl_{st}"] = pnl.sum()
-        eq = pnl.groupby(x.t).sum().cumsum()     # resolution is later, but mark PnL at entry for ordering
-        r[f"mdd_{st}"] = (eq.cummax() - eq).max()
+        eq = pnl.groupby(x.end).sum().sort_index().cumsum()     # PnL realized at resolution (event end)
+        r[f"mdd_{st}"] = float((np.maximum.accumulate(np.r_[0, eq.values]) - np.r_[0, eq.values]).max())
     capped = np.minimum(200, cap_frac * x.liq)
     r["pnl_capped200"] = (capped * x.ret).sum(); r["usd_capped200"] = capped.sum()
+    days = max((x.t.max() - x.t.min()) / 86400, 1)
+    r["days"] = days; r["usd_per_day_capped"] = capped.sum() / days
     return r
 
 if __name__ == "__main__":
@@ -98,3 +100,49 @@ def snapshot_scores(df):
     s["ll_mkt"] = -np.log(s.p_mkt); s["ll_mod"] = -np.log(s.p_mod)
     s["ll_mix"] = -np.log((0.5 * s.p_mkt + 0.5 * s.p_mod).clip(1e-4, 1))
     return s.reset_index()
+
+def load_pc(df):
+    """attach print-confirmed columns (fill model B)"""
+    fs = glob.glob(f"{D}/bt_pc/*.parquet")
+    pc = pd.concat([pd.read_parquet(f).assign(event_id=os.path.basename(f)[:-8]) for f in fs], ignore_index=True)
+    x = df.merge(pc, on=["event_id", "t", "k"], how="left")
+    r = x.fee_rate
+    okl = x.pl.notna() & (x.nl == 0); okh = x.ph.notna() & (x.nh == 0)
+    x["b_cost_y"] = np.where(okl, x.pl + r * x.pl * (1 - x.pl), np.nan)
+    nop = 1 - x.ph
+    x["b_cost_n"] = np.where(okh, nop + r * nop * (1 - nop), np.nan)
+    x["b_edge_y"] = x.q - x.b_cost_y
+    x["b_edge_n"] = (1 - x.q) - x.b_cost_n
+    x["b_cap_y"] = np.where(okl, x.ul, 0.0); x["b_cap_n"] = np.where(okh, x.uh, 0.0)
+    return x
+
+def trades_b(x, th, side="both", hmin=0, hmax=1e9, accts=None, pmin=0.0, pmax=1.0):
+    out = []
+    for s in (["y", "n"] if side == "both" else [side]):
+        m = (x[f"b_edge_{s}"] > th) & (x.H >= hmin) & (x.H < hmax)
+        cost = x[f"b_cost_{s}"]
+        m &= (cost >= pmin) & (cost <= pmax)
+        if accts is not None: m &= x.acct.isin(accts)
+        z = x[m].copy()
+        z["side"] = s; z["cost"] = cost[m]; z["pay"] = z[f"pay_{s}"]; z["edge"] = z[f"b_edge_{s}"]
+        z["px"] = z.cost; z["liq"] = z[f"b_cap_{s}"]
+        out.append(z)
+    z = pd.concat(out).sort_values("t").drop_duplicates(["event_id", "k", "side"], keep="first")
+    z["ret"] = (z.pay - z.cost) / z.cost
+    return z
+
+def summarize_b(z, stakes=(10, 50, 200)):
+    if len(z) == 0: return dict(n=0)
+    r = dict(n=len(z), events=z.event_id.nunique(), hit=z.pay.mean(), avg_px=z.px.mean(), avg_edge=z.edge.mean(), roi=z.ret.mean())
+    ev = z.groupby("event_id").ret.sum()
+    r["t_ev"] = ev.mean() / (ev.std(ddof=1) / np.sqrt(len(ev))) if len(ev) > 2 and ev.std() > 0 else np.nan
+    for st in stakes:
+        usd = np.minimum(st, z.liq)                      # capped by the confirming print's size
+        pnl = usd * z.ret
+        r[f"usd_{st}"] = usd.sum(); r[f"pnl_{st}"] = pnl.sum()
+        eq = pnl.groupby(z.end).sum().sort_index().cumsum()
+        r[f"mdd_{st}"] = float((np.maximum.accumulate(np.r_[0, eq.values]) - np.r_[0, eq.values]).max())
+        r[f"roi_{st}"] = pnl.sum() / usd.sum() if usd.sum() > 0 else np.nan
+    days = max((z.t.max() - z.t.min()) / 86400, 1); r["days"] = days
+    r["usd200_per_day"] = r["usd_200"] / days
+    return r

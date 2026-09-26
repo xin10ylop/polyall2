@@ -13,8 +13,8 @@ from train_samples import H_LIST
 HOURS = [120, 72, 48, 24, 12, 6, 3, 1, 0.5]
 
 
-def make_panel(asset, series, prefix, res_offset=0, hours=HOURS, rebuild=False):
-    out = DATA / f'panel_above_{asset}_{prefix}.parquet'
+def make_panel(asset, series, prefix, res_offset=0, hours=HOURS, rebuild=False, suffix=''):
+    out = DATA / f'panel_above_{asset}_{prefix}{suffix}.parquet'
     if out.exists() and not rebuild:
         return pd.read_parquet(out)
     mk = pd.read_parquet(DATA / f'markets_{series}.parquet')
@@ -41,6 +41,9 @@ def make_panel(asset, series, prefix, res_offset=0, hours=HOURS, rebuild=False):
 
 if __name__ == '__main__':
     asset, series, prefix = sys.argv[1:4]
-    pn = make_panel(asset, series, prefix, rebuild='--rebuild' in sys.argv)
+    if '--early' in sys.argv:
+        pn = make_panel(asset, series, prefix, hours=[160, 144, 96], rebuild=True, suffix='_early')
+    else:
+        pn = make_panel(asset, series, prefix, rebuild='--rebuild' in sys.argv)
     print(pn.groupby('h').size())
     print('outcome mismatch vs binance:', (pn.y != pn.y_bin).sum())

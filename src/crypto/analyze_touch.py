@@ -13,6 +13,7 @@ Model (no look-ahead):
 Decision times: every day at 16:00 UTC while the market is live and not yet touched, plus W1-{12,6,3,1}h.
 """
 import sys
+from pathlib import Path
 import numpy as np, pandas as pd
 from scipy import stats
 from common import DATA, to_unix
@@ -85,7 +86,7 @@ def make_panel(asset='BTC', series_list=('bitcoin-hit-price-monthly', 'bitcoin-h
         return pd.read_parquet(out)
     F = Features(asset)
     spot = F.spot
-    trp = DATA / f'train_extreme_{asset}.parquet'
+    trp = (DATA if asset == 'BTC' else Path('/tmp/claude-0/-home-user-polyall2/23837d40-49ff-5c90-86c9-24d18e8ba96d/scratchpad')) / f'train_extreme_{asset}.parquet'
     if trp.exists():
         tr = pd.read_parquet(trp)
     else:

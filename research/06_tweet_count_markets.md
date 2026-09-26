@@ -94,3 +94,59 @@ The model is roughly calibrated (a well-specified model would show 0.80 / 0.10 /
 over-confident for 1-week+ horizons on Zelenskyy/CZ/WH and has a small upward drift (rates rose over the
 sample). It is a reasonable "fair value" engine — the question is whether it beats the market.
 
+## 3. Backtest set-up
+
+* Universe: 543 resolved count events (non-`arch-`), window start ≥ tracker start + 28 d → Elon from 2025-12-16,
+  WH 2026-03-17, Trump 2026-02-24, the X small accounts from 2026-04-10/14. Walk-forward params exist from
+  Jan-2026 (Elon) / May-2026 (others), so 509 events have decision rows (1.36 M bucket×time rows).
+* Decision times: hourly from max(window start − 48 h, first price) to end, plus every 10 min in the last 3 h.
+* Market data: CLOB `prices-history` at 10-min fidelity (verified against live books to be the **book midpoint**,
+  also for wide books: median |history − (bid+ask)/2| = 0.75 c), and **all** taker trades via
+  `data-api /v2/trades?condition=…` (cursor pagination, no 10k cap; 8.7 M trades).
+* Look-ahead controls:
+  * model uses only posts with `importedAt ≤ t`; params walk-forward;
+  * the execution mid is the **first sample at/after t + 60 s** (market has ≥ the model's information);
+  * events overlapping detected tracker outages are dropped; decision times when xtracker has imported no
+    X post for > 120 min (a real-time-observable stall proxy) are skipped;
+  * IS = decision times before 2026-06-01, OOS = after (Jun–Sep 2026).
+* Fill model A ("mid-based"): YES ask = mid + max(1 c, median lift-print premium over mid in the prior 24 h),
+  never below the last lift print of the previous 30 min; NO ask = 1 − (mid − max(1 c, hit premium)); plus the
+  exact fee 0.05·p·(1−p). One entry per (event, bucket, side), held to resolution.
+* Fill model B ("print-confirmed"): fill only at the price of an actual taker print in the 30 min before t
+  (YES buy ← last YES-equivalent lift print; NO buy ← last hit print), only if xtracker imported **no new post
+  between that print and t**, size capped at that print's size; plus fee.
+
+## 4. Why the xtracker count is not "known exactly" at decision time
+
+* xtracker imports X posts with a median lag of ~2.7 min (p90 ≈ 5 min); competitors trade off X directly
+  (one active wallet advertises a faster alert tool, "xtracker.live"). In the last minutes of a window the
+  market therefore knows more than an xtracker-based model.
+* **Global X-side stalls** (all X accounts stop importing, then back-fill): 2026-04-30 (≈20 h), 06-01 (up to
+  69 h lag), 08-26→08-28 (45–77 h), 09-10→09-11 (≈21 h). During these the displayed count is stale, the market
+  is not. Example: WH Sep 4–11 — xtracker showed 197 at the close, the market priced `200+` at 0.996, the final
+  (back-filled) count was 228. An xtracker-only model would have sold `200+` at 0.4 % and lost everything.
+  Trump/Truth Social stalls are the norm (median time since last import 3.4 h, p90 ≈ 4 days).
+* Consequence: near the end of windows the model's log-loss is much worse than the market's for WH, Elon,
+  Zelenskyy, Cruz and (dramatically) Trump — the market is faster, not dumber.
+
+### 4.1 Model vs market as forecasters (log-loss of the realised bucket; market = normalised mids at/just before t)
+
+OOS (Jun–Sep), mean log-loss per snapshot (lower is better), model − market:
+
+| account | <6 h | 6–24 h | 24–96 h | >96 h |
+|---|---:|---:|---:|---:|
+| elonmusk | +0.11 | +0.05 | +0.01 | +0.02 |
+| WhiteHouse | +0.52 | +0.30 | +0.13 | +0.02 |
+| ZelenskyyUa | +0.12 | +0.13 | +0.19 | +0.23 |
+| cz_binance | +0.16 | +0.07 | +0.04 | −0.09 |
+| tedcruz | +0.23 | +0.03 | −0.12 | −0.15 |
+| NYCMayor | −0.06 | −0.07 | −0.12 | −0.30 |
+| khamenei_ir | −0.08 | −0.11 | −0.10 | −0.26 |
+| realDonaldTrump | +1.12 | +0.35 | +0.19 | −0.10 |
+
+* **Elon**: model ≈ market at every horizon (RMSE of the forecast bucket index within ±0.03 buckets of the
+  market). The market spreads more mass into far tails (0.1–2 c on each of 15–25 far buckets: the usual
+  long-shot premium), which is not shortable after spread + fee. No structural mispricing of the central mass.
+* The model "beats" the market only on thin accounts (NYC Mayor, Khamenei, Cruz/CZ at long horizons) — where
+  mids of 20–70 c-wide books are not prices anyone can trade at (Section 6).
+

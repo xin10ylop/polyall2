@@ -23,7 +23,8 @@ def station_of(desc):
 
 def main():
     E = pd.read_parquet(f"{D}/events.parquet")
-    descs = json.load(open(f"{D}/descriptions.json"))
+    import gzip
+    descs = json.load(gzip.open(f"{D}/descriptions.json.gz", "rt"))
     T = E[E.kind != "other"].copy()
     st = T.desc_hash.map(lambda h: station_of(descs.get(h, "")))
     T["icao"] = [s[0] for s in st]

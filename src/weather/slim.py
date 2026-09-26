@@ -3,7 +3,7 @@ import json, re, hashlib, sys
 
 RAW = "/home/user/polyall2/data/weather/events_all.json"
 OUT = "/home/user/polyall2/data/weather/events_slim.json"
-DESC = "/home/user/polyall2/data/weather/descriptions.json"
+DESC = "/home/user/polyall2/data/weather/descriptions.json"  # later gzipped to descriptions.json.gz
 
 EV_KEYS = ["id", "slug", "title", "startDate", "creationDate", "createdAt", "endDate", "closed", "closedTime",
            "volume", "liquidity", "openInterest", "negRisk", "negRiskMarketID", "seriesSlug", "resolutionSource",
