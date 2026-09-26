@@ -1,0 +1,98 @@
+[
+  {
+    "cid": "0x796c320ce22d16c53b34a8355f4f87085c2748f22db2d69bfb35a7f11243e261",
+    "q": "Will \"Primetime\" Opening Weekend Box Office be between 19m and 22m?",
+    "p_yes": 0.72,
+    "confidence": "medium",
+    "evidence": "Primetime (A24, Robert Pattinson as Chris Hansen) Thu previews $2.7M (IndieWire/THR Sep 25) vs Civil War's $2.9M previews -> $25.5M open (~2.5x Friday). Friday incl. previews ~$8.45-8.5M at 2,874 locations. 3-day projections: Deadline $19M-$20M (B CinemaScore); THR and TheWrap (Sat AM) $20.5M; pre-weekend tracking $12M-$16M; some earlier projections $22.1M-$23.5M. Implied Friday multiplier ~2.25-2.45 gives ~$19M-$20.7M. Bracket 19-22M (ties go higher). Main risk: finishing under $19M given B CinemaScore and fan-driven previews (~32% of Friday).",
+    "researched_at_utc": "2026-09-26T18:17:54Z"
+  },
+  {
+    "cid": "0xc75f4f5eece7a39b3f307d616240115d19665f9844c26acf1f3e3f62776b8c39",
+    "q": "Will \"Forgotten Island\" Opening Weekend Box Office be between 13m and 16m?",
+    "p_yes": 0.15,
+    "confidence": "medium",
+    "evidence": "Forgotten Island (Universal/DreamWorks Animation, 3,548 theaters). The Numbers: previews $1.48M, Friday incl. previews/advance screenings $4.38M. Sat-morning 3-day projections: Deadline $11.5M, THR and TheWrap $11.5M; pre-weekend tracking $13-18M (Deadline $13-15M before Friday, BoxofficeReport $16M, Box Office Theory $14-19M). A CinemaScore, 82% definite recommend, 96% RT. Comparison: Gabby's Dollhouse: The Movie had a ~$4.3M Friday on the same late-Sept weekend in 2025 and finished $13.7M (Sat +26%), but it had a much smaller preview share; Forgotten Island's previews were ~34% of Friday, making it more front-loaded. Reaching $13M would require ~13% above the studio's Saturday-morning projection (~3.0x Friday). Bracket 13-16M.",
+    "researched_at_utc": "2026-09-26T18:17:54Z"
+  },
+  {
+    "cid": "0xc0a88d94afa98c4fd1a3baa5978328140b6c0661dc91ba2bc9d4ffe16631e7c7",
+    "q": "Will “The Cure” by Olivia Rodrigo win Best Alternative at the 2026 MTV Video Music Awards?",
+    "p_yes": 0.74,
+    "confidence": "medium",
+    "evidence": "2026 VMAs Sep 27 (Peacock Theater LA, CBS/MTV). Best Alternative nominees: Geese 'Taxes', mgk & Fred Durst 'FIX UR FACE', Noah Kahan 'The Great Divide', Olivia Rodrigo 'the cure', Sombr 'Homewrecker', Tame Impala 'Dracula', twenty one pilots 'Drag Path' (Wikipedia/Today). Best Rock was eliminated this year (Loudwire). Billboard named 'the cure' best song of 2026 so far; Rodrigo has only 2 noms (Best Pop, Best Alternative) and is not on the announced performer list. Sombr (2025 Best Alternative winner) performs in the George Michael tribute; mgk won this category in 2020 and 2021. Kalshi odds article (Sep 25): Rodrigo 74%, twenty one pilots and Sombr ~10% each. Fan voting closed Sep 25.",
+    "researched_at_utc": "2026-09-26T18:07:38Z"
+  },
+  {
+    "cid": "0x051ddc65cb9fab1200c14f0a24d7d5aec5cb969ed296d8a6e9ce1aba8afff6d7",
+    "q": "Will Ariana Grande win Artist of the Year at the 2026 MTV Video Music Awards?",
+    "p_yes": 0.2,
+    "confidence": "medium",
+    "evidence": "Artist of the Year nominees: Ariana Grande, Bruno Mars, Madonna, Morgan Wallen, Sabrina Carpenter, Taylor Swift (fan-voted, voting closed Sep 25). Taylor Swift: 11 noms, receives inaugural MTV VMA Artist Director Honors and world-premieres her 'Patient Zero' video on the Sep 27 broadcast (CBS/Paramount press), i.e. strong MTV partnership and likely attendance; won AOTY 2023 and 2024. Madonna (13 noms) opens the show, first VMA performance in 23 years. Ariana: 8 noms, sixth AOTY nomination, won AOTY 2019; not on announced performer/presenter lists; strong recent streaming growth (+6.1M Spotify monthly listeners in 30 days, Viberate). Gold Derby (Sep 25): Swift 67.5%, Madonna 21.7%, Grande 8.4%. Kalshi article (Sep 25): Swift 52%, Grande 35%. Viberate data model: Swift 77.7, Mars 68.5, Grande 66.2.",
+    "researched_at_utc": "2026-09-26T18:07:38Z"
+  },
+  {
+    "cid": "0x81c5ef7aa775aaaa9525e396d59391f921ac3a7316e24c6fcf5e56044feac28a",
+    "q": "Will \"Heart of the Beast\" Opening Weekend Box Office be between 20m and 23m?",
+    "p_yes": 0.54,
+    "confidence": "low",
+    "evidence": "Heart of the Beast (Paramount, Brad Pitt/David Ayer survival-dog drama, 3,435 theaters). The Numbers daily table: previews Sep 24 $2.0M, Fri Sep 25 $7.45M (incl. previews). Sat-morning 3-day projections: THR and TheWrap ~$20M; another report $20.5M; pre-weekend tracking $14-20M (Media Play News $16M, Box Office Theory $14M+). A- CinemaScore, 88% RT critics / 96% audience; older-skewing audience usually yields strong Sat/Sun (A- adult dramas often run ~2.7-2.9x Friday incl. previews, i.e. ~$20.1-21.6M). Bracket 20-23M (exact $20M resolves up); central estimate sits right at/just above the lower edge, so a small miss either way decides it.",
+    "researched_at_utc": "2026-09-26T18:17:16Z"
+  },
+  {
+    "cid": "0xcc578d649d6d8324e50c41291325247c017f8c6af7f506bc3fa0afbfa2f645bf",
+    "q": "Will \"Best of the Best\" be the top global Netflix movie this week?",
+    "p_yes": 0.2,
+    "confidence": "low",
+    "evidence": "Tracking week Mon Sep 21 - Sun Sep 27, 2026 (global English films). Best of the Best (Netflix original, Hasan Minhaj/Maitreyi Ramakrishnan) released Fri Sep 18; debuted ~#13 daily, then hit #1 on FlixPatrol's worldwide streaming chart ~Sep 21-22 (ComingSoon, Sep 22) and #2 in US points for the week to ~Sep 25 (What's on Netflix: Ministry of Ungentlemanly Warfare 76, Best of the Best 62, Seemingly Perfect Family 55, WDIGMA 51, Top Gun: Maverick 35). Unabomber (Netflix original, Russell Crowe/Jacob Tremblay, mixed reviews) released Fri Sep 25 and topped daily Netflix movie lists on Sep 25-26 (Tom's Guide daily list: Unabomber #1, Top Gun #2, Ministry #3, Best of the Best #4). Prior week's #1 was Why Did I Get Married Again? with 9.7M views (wk1 19.3M), Whisper Man #2 at 6.2M, so the bar for #1 is roughly 8-12M views. Top Gun: Maverick added Sep 22 (licensed, availability likely regional).",
+    "researched_at_utc": "2026-09-26T18:09:49Z"
+  },
+  {
+    "cid": "0x70fe61f81d061c029d1bad10d169e7af0bfd3928f22bdc27dabab21c186730c8",
+    "q": "Will “I Just Might” by Bruno Mars win Best R&B at the 2026 MTV Video Music Awards?",
+    "p_yes": 0.55,
+    "confidence": "low",
+    "evidence": "Best R&B nominees: Bruno Mars 'I Just Might', Chris Brown 'It Depends/Obvious', Dave & Tems 'Raindance', Justin Bieber 'YUKON', Kehlani 'Folded', Mariah the Scientist & Kali Uchis 'Is It a Crime' (Wikipedia/Today). 'I Just Might' debuted at No. 1 on the Hot 100 (Jan 24, 2026), 3 weeks at No. 1, lead single of No. 1 album The Romantic (Billboard). Bruno is also nominated for Video and Artist of the Year; Viberate data model ranked him 2nd for AOTY; not on announced performer list. Kehlani's 'Folded' won Grammys for Best R&B Performance and Best R&B Song and iHeart R&B Song of the Year; Chris Brown won iHeart R&B Artist of the Year and has a heavy-voting fanbase. Past Best R&B winners: SZA 2023-24, Mariah Carey 2025 (Vanguard honoree that year), Silk Sonic 2021. Fan voting closed Sep 25; no public odds found for this category.",
+    "researched_at_utc": "2026-09-26T18:08:01Z"
+  },
+  {
+    "cid": "0xcde1b5bd38e8948d035c2a7cf856149f39df9662982d336dc1f44ebaa132aa71",
+    "q": "Will Donald Trump post 120-139 Truth Social posts from September 22 to September 29, 2026?",
+    "p_yes": 0.27,
+    "confidence": "low",
+    "evidence": "Window Sep 22 12:00 PM ET (16:00 UTC) - Sep 29 12:00 PM ET. Count from the public trumpstruth.org archive (not the official xtracker; counts may differ by a few): ~95-100 posts (incl. a few ReTruths) from Sep 22 16:00 UTC through Sep 26 16:00 UTC, i.e. half the window. Daily (UTC) counts: Sep 16: 8, Sep 17: 17, Sep 18: 35, Sep 19: 5, Sep 20: 9, Sep 21: 19, Sep 22: ~5, Sep 23: 10, Sep 24: 23, Sep 25: 7, Sep 26 to 16:00: 55 (bursts at 00h and 13h UTC). ~10-day average ~14/day excluding Sep 26 spree; Mediaite reported a 2026 average of ~19/day. Bracket 120-139 requires roughly 20-44 more posts in the remaining 72 hours (Sat afternoon through Tue noon ET), i.e. ~7-14/day; typical pace (14-24/day) would imply ~40-70 more, landing near or above the top of the bracket.",
+    "researched_at_utc": "2026-09-26T18:14:29Z"
+  },
+  {
+    "cid": "0xd0a7f7ddfe2c6cdd0a32588f2383882b2b28b6897b0b002024247d61cd42f622",
+    "q": "Will there be exactly 1 Codex weekly usage limit reset in the week of September 21?",
+    "p_yes": 0.05,
+    "confidence": "high",
+    "evidence": "Window Sep 21 00:00 ET - Sep 27 23:59 ET, max one reset per ET calendar date; banked resets explicitly qualify. (1) Sep 22, 2026 ~18:23 UTC (2:23 PM ET): Tibo announced 'We are loading a banked reset into all accounts of our Plus, Pro and Business users' alongside GPT-6 Sol/Luna launch and 50% API price cut (codex-resets.com tracker, openclawdc.com, 9to5Mac). (2) Sep 26 ~00:07 UTC = Sep 25 ~8:07 PM ET: after a Codex/ChatGPT Work outage on Sep 25-26, Tibo posted 'we're back in action and we'll reset usage limits for all paid users across codex and ChatGPT work' (x.com/thsottiaux/status/2103637477760311522; codex-reset.com; KuCoin/Phemex/TechFlow/ABAB coverage). Some outlets phrase it as 'paid users affected by this brief outage', a possible (minor) eligibility ambiguity. These fall on two distinct ET dates (Sep 22 and Sep 25), implying a count of at least 2.",
+    "researched_at_utc": "2026-09-26T18:14:29Z"
+  },
+  {
+    "cid": "0x411f2743a41f4f5007cd5e7562ddd1a1543a119006e59b63e0ba0ae7d682ee3c",
+    "q": "Will Donald Trump publicly insult someone on September 27, 2026?",
+    "p_yes": 0.72,
+    "confidence": "low",
+    "evidence": "Target date Sunday Sep 27, 2026 (ET). Review of Trump's Truth Social text posts Sep 15-26 (trumpstruth.org archive): named-individual insults are infrequent in text posts this period, e.g. Sep 23 'Third Rate Reporter, Kaitlan Collins ... a truly unhappy person'; most other attack posts target outlets/groups (Fake News CNN, MSDNC, 'Dumocrats', Supreme Court), which do not count. Last Sunday (Sep 20 ET) text posts showed no clear named-individual insult. Ongoing fights likely to prompt attacks: CNN/MSNOW/Politico White House ban and lawsuit, Byron Donalds 'fake story' (Sep 26), heavy posting spree Sep 26 (~55 posts by noon ET). Sep 26 he attended Tennessee-Texas game in Knoxville; no public Sunday event found. Spoken remarks (gaggles, interviews, calls) and video posts also count and frequently contain insults; Sundays typically have fewer public appearances.",
+    "researched_at_utc": "2026-09-26T18:15:24Z"
+  },
+  {
+    "cid": "0x89092929fbeb5da7352867ccd608b9773e7f92e6911483aa2c0f68b698be02a2",
+    "q": "Will “Bring Your Love” by Madonna and Sabrina Carpenter win Song of the Year at the 2026 MTV Video Music Awards?",
+    "p_yes": 0.14,
+    "confidence": "low",
+    "evidence": "Song of the Year nominees: BTS 'Swim', Ella Langley 'Choosin' Texas', HUNTR/X 'Golden', Madonna & Sabrina Carpenter 'Bring Your Love', Olivia Dean 'Man I Need', PinkPantheress & Zara Larsson 'Stateside' remix, RAYE 'Where Is My Husband!'. Fan-voted (closed Sep 25). Past winners: Anti-Hero 2023, Espresso 2024, APT. 2025. Madonna leads nominations (11-13), opens the show (first VMA performance in 23 years); Sabrina has 9 noms; 'Bring Your Love' (Apr 30, 2026) is lead single of Confessions II and is also likely a Best Collaboration contender. RAYE performs twice (own set + George Michael tribute). BTS reunited with 'Swim' and has a dominant fan-voting base. Gold Derby (Sep 25): BTS 53.0%, RAYE 22.0%, Ella Langley 9.1% (Bring Your Love below that). Kalshi article (Sep 25): BTS ~50%, Madonna & Sabrina 'significantly lower'. Viberate data model: 'Golden' first, 'Man I Need' 2nd, 'Choosin' Texas' 3rd.",
+    "researched_at_utc": "2026-09-26T18:08:01Z"
+  },
+  {
+    "cid": "0x68db1d7d73ce07afd1668158ab52fdc54d85dbc705bd6740cbac7972544f8a9e",
+    "q": "Will \"Avengers: Endgame Encore\" Opening Weekend Box Office be between 22m and 25m?",
+    "p_yes": 0.45,
+    "confidence": "low",
+    "evidence": "Avengers: Endgame Encore (Disney re-release with modified ending/new post-credit scenes, 3,060 theaters). Thursday previews $3.8M (Deadline/THR Sep 25). Friday incl. previews $11.2M (Variety/TheWrap/THR/Deadline, Sep 26). Sat-morning 3-day projections: Deadline $24M-$26M; THR and TheWrap $26M; ScreenRant (Sep 26 11:23 AM ET) $24-26M; pre-weekend Media Play News $28M, Box Office Theory $18M+. Implied Friday multiplier ~2.15-2.3; fan-driven re-releases tend to be front-loaded (previews ~34% of Friday). Bracket 22-25M (exactly $25M resolves to the higher bracket). Central estimate ~$25M sits right at the bracket's upper edge.",
+    "researched_at_utc": "2026-09-26T18:17:54Z"
+  }
+]

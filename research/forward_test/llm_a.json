@@ -1,0 +1,114 @@
+[
+ {
+  "cid": "0xf0a654ed0533904ea8b221b93b2e2162bff62151a2b246148fc25b6b0b00d594",
+  "q": "Will Xiaomi have the best Chinese AI model at the end of September 2026?",
+  "p_yes": 0.9,
+  "confidence": "medium",
+  "evidence": "arena.ai Text Overall no-style-control page fetched 2026-09-26 18:00 UTC (last updated Sep 25): best Chinese model is Xiaomi mimo-v2.6-pro, rank 9, rating 1490.73 (+/-9.4, 4,026 votes, first appeared in the Sep 25 update after MiMo-V2.6 release Sep 22). Next-best Chinese: Alibaba qwen3.8-max 1479.80 (rank 17), Moonshot kimi-k3-max 1476, Z.ai glm-5.3-max 1472, Baidu ernie-5.1 1468, DeepSeek v4.1-flash-max 1465. Gap to #2 Chinese ~11 points. Leaderboard update history (daily snapshots, oolong-tea-2026/arena-ai-leaderboards): text updates Jul-Sep 2026 every ~1-12 days (Sep 2, 11, 13, 25); roughly 50-60% chance of another update before Sep 30 noon ET. Pending Chinese candidates: StepFun Step 5 Preview (released Sep 18; added to WebDev Sep 25; described as near GLM-5.3 level), Tencent hy4-preview (not in text arena). No known Qwen 4/DeepSeek/Kimi flagship release in the last week (llmgateway timeline).",
+  "researched_at_utc": "2026-09-26T18:05:39Z"
+ },
+ {
+  "cid": "0xf828d652fd9d3512e92d00b2a563ba77f1a67ee177d2e95af34a811ae2d11841",
+  "q": "Will “Hate That I Made You Love Me” by Ariana Grande win Video of the Year at the 2026 MTV Video Music Awards?",
+  "p_yes": 0.11,
+  "confidence": "medium",
+  "evidence": "2026 VMAs Sep 27 (Peacock Theater, LA; host Snoop Dogg). VOTY nominees: Ariana Grande 'hate that i made you love me', Bruno Mars 'I Just Might', GENER8ION 'STORM', Madonna 'Confessions II - The Film', Sabrina Carpenter 'Tears', Taylor Swift 'The Fate of Ophelia' (Wikipedia/NBC). Gold Derby odds (via Yahoo, ~Sep 2026): Swift 65.6%, Madonna 27.6%, Grande 4.3%, Carpenter 2.5%. Kalshi blog Sep 25: Swift 67%, Grande 28%. MTV is giving Swift the inaugural 'Artist Director Honors' plus a network-TV video debut (she directed Ophelia); Madonna opens the show (13 noms). Announced performers (Today/HollywoodLife): Madonna, LISA, RAYE, Sienna Spiro, Shaboozey, Gunna, GENER8ION & Yung Lean, Kacey Musgraves, Sombr, Teddy Swims; Grande not on the list. Grande won VOTY 2025 ('brighter days ahead'); Swift beat Grande for VOTY in 2024 ('Fortnight'); Swift has 5 prior VOTY wins. Both Ophelia and 'hate that i made you love me' were Hot 100 #1s.",
+  "researched_at_utc": "2026-09-26T18:08:57Z"
+ },
+ {
+  "cid": "0xffb77bc5865e2d288d0c24bbc20e36d2bdc19a72157b3e9a42bc6d399714fe60",
+  "q": "Will “Stateside + Zara Larsson” by PinkPantheress win Best Dance at the 2026 MTV Video Music Awards?",
+  "p_yes": 0.4,
+  "confidence": "low",
+  "evidence": "Best Dance (revived category, fan-voted per Wikipedia) nominees: Bebe Rexha & Faithless 'New Religion', Harry Styles 'Aperture', Lady Gaga & Doechii 'Runway', Madonna 'Confessions II - The Film' (added in updated list; Madonna's total rose 11->13 noms), PinkPantheress 'Stateside + Zara Larsson', Slayyyter 'Dance...', Tate McRae 'Nobody's Girl'. Some outlets' early lists (NBC LA) omit Madonna. Kalshi blog Sep 25, 2026: Madonna 52%, PinkPantheress 46% on Kalshi, citing Madonna's opening performance. Madonna opens the show (first VMA performance in 23 years) with a dance-focused album; PinkPantheress/Zara Larsson not on announced performer list. 'Stateside' also nominated for Song of the Year, Best Collaboration, Best R&B; PinkPantheress and Zara Larsson have 5 noms each. Lady Gaga won 5 VMAs incl. Artist of the Year in 2025 (large voting fanbase).",
+  "researched_at_utc": "2026-09-26T18:08:57Z"
+ },
+ {
+  "cid": "0x496519fc6f9e67ff321a8d3906cdb17acaeb9dfc9d6cbdf4c4fef59b44759a20",
+  "q": "Will Xiaomi be the third-best AI lab at the end of September 2026?",
+  "p_yes": 0.62,
+  "confidence": "low",
+  "evidence": "arena.ai Text Overall no-style-control, Labs view fetched 2026-09-26 (last updated Sep 25): 1 Anthropic (claude-opus-5.5-high 1518), 2 Google (gemini-3.8-flash-high 1494.35, 21.7k votes, preliminary), 3 Xiaomi (mimo-v2.6-pro 1490.73, +/-9.4, only 4,026 votes), 4 Meta (muse-spark-1.3-max 1490.01, +/-6.6, 10k votes), 5 Alibaba 1479.8, OpenAI best 1471 (new gpt-6-sol/luna-max rated ~1392-1396). Xiaomi leads Meta by 0.72 points; trails Google by 3.6. If no leaderboard update before Sep 30 12PM ET, current order stands. Text leaderboard updates in Jul-Sep 2026 came every 1-12 days (Sep 2, 11, 13, 25) -> ~55% chance of an update in the window. A simple vote-accrual simulation (mimo score sd ~3 per update, Meta ~1.7) gives ~43% Xiaomi stays exactly 3rd given an update (~57% Meta passes or Xiaomi overtakes Google ~15%). Sources: arena.ai leaderboard HTML embedded ratings; arena changelog; daily snapshot repo.",
+  "researched_at_utc": "2026-09-26T18:05:39Z"
+ },
+ {
+  "cid": "0x6440242ef007c0caeffcc2633950ff9aa96a274a7b331301b4aeb3f9b58b3a3a",
+  "q": "Will \"Resident Evil\" be #1 Box Office this weekend?",
+  "p_yes": 0.13,
+  "confidence": "medium",
+  "evidence": "Weekend Sep 25-27, 2026 (Friday reports published Sat Sep 26; Variety via Yahoo 15:54 UTC, TheWrap 8:14 AM): Avengers: Endgame Encore (re-release) Friday $11.2M incl. $3.8M Thursday previews from 3,060 screens, weekend projection ~$26M. Resident Evil (2nd weekend, opened $60-61M) Friday $6.9M from 3,684 locations (4th place on Friday), weekend projection $23.5M (Variety) / $23.8M (TheWrap), ~-60%. Primetime (A24) Fri $8.5M -> $20.5M; Heart of the Beast Fri $7.45M -> $20M; Forgotten Island Fri $4.4M -> $11.5M. Deadline headline: 'Avengers Endgame leads weekend where four films eye $20M+'. Endgame projection implies a 2.3x Fri-to-weekend multiple (already front-loaded); RE projection implies ~3.4x. Resolution uses The Numbers final 3-day figures. Pre-weekend BoxofficePro preview framed RE vs Endgame Encore as a battle for #1.",
+  "researched_at_utc": "2026-09-26T18:09:47Z"
+ },
+ {
+  "cid": "0xb4813fb29711f6447b2a9c4dca90cd21f91be8dfc74361020ebf731af4603751",
+  "q": "Will “Choka Choka” by Anitta and Shakira win Best Latin at the 2026 MTV Video Music Awards?",
+  "p_yes": 0.44,
+  "confidence": "low",
+  "evidence": "Best Latin nominees: Anitta & Shakira 'Choka Choka', Bad Bunny 'NUEVAYoL', Fuerza Regida 'Tu Sancho', Karol G 'Papasito', Rosalia ft. Yahritza y su Esencia 'La Perla', Ryan Castro/Kapo/Gangsta 'La Villa', Shakira & Burna Boy 'Dai Dai' (Wikipedia/NBC). Best Latin history: Anitta won 2022 ('Envolver'), 2023 ('Funk Rave'), 2024 ('Mil Veces'); Shakira won 2025 ('Soltera'); Bad Bunny last won 2021 ('Dakiti') and was nominated but lost in several later years. Choka Choka (Apr 2026) is the first Anitta-Shakira collab; Shakira has a second nominee (Dai Dai) that may split votes. Bad Bunny had a very large 2026 (Super Bowl halftime, Grammys). None of these Latin artists are on the announced performer list (Exame Sep 26 article notes Anitta nominated; no attendance confirmation). A third-party aggregator snippet showed Bad Bunny and Choka Choka as the two frontrunners in betting.",
+  "researched_at_utc": "2026-09-26T18:08:57Z"
+ },
+ {
+  "cid": "0x6c3f8936edfa4d08af58b9c460cf1a077559eaedf3fa14e9abffe38a7ba834b1",
+  "q": "Will JOLTS Job Openings be below 7.0M in August?",
+  "p_yes": 0.18,
+  "confidence": "medium",
+  "evidence": "BLS JOLTS (released Sep 1, 2026): July 2026 openings 7,271k; June revised down 177k to 7,182k. FRED JTSJOL recent: Feb 6,922; Mar 6,887; Apr 7,585; May 7,537; Jun 7,182; Jul 7,271. Last 12 months averaged ~7,106k and 5 of 12 prints were below 7.0M (Aug-25 6,919; Nov 6,846; Dec 6,550; Feb 6,922; Mar 6,887). Month-to-month changes over the past 2 years have sd ~307k; 7 of 25 were drops of >=271k (the move needed to go below 7.0M). Consensus for August (release Sep 29, 10:00 ET) ~7.23M (investing/forex calendars). Indeed Job Postings Index rose m/m in July and August (+0.2% Aug) and +1.5% into Sep 18, first positive y/y in ~4 years (Indeed Hiring Lab Sep 24). August payrolls +162k vs 53k expected, unemployment 4.1% (BLS Sep 4). July JOLTS: hires 5.1M, quits rate 1.9%, layoffs 1.7M (six-month low).",
+  "researched_at_utc": "2026-09-26T18:10:54Z"
+ },
+ {
+  "cid": "0xfb7b6abec4907d16ced67afe89e33f8a4ab7e38ae470ef5c8b4d471aeb948b9f",
+  "q": "Will fewer than 20 ships transit the Strait of Hormuz between September 21-September 27?",
+  "p_yes": 0.14,
+  "confidence": "medium",
+  "evidence": "IMF PortWatch (ArcGIS Daily_Chokepoints_Data, chokepoint6, queried 2026-09-26; latest data Sep 20). Weekly Mon-Sun transit totals: Jul 20: 25; Jul 27: 37; Aug 3: 39; Aug 10: 31; Aug 17: 35; Aug 24: 30; Aug 31: 22; Sep 7: 37; Sep 14-20: 22 (daily 2,2,1,3,7,6,1). Since the crisis began (Mar 2026), 5 of 29 weeks were <20 (Mar 2-22: 18/15/10; May 4-10: 10 during an attack spike; Jun 8-14: 17); none since mid-July. Recent attacks: LPG carrier Al Maryah hit Sep 20, tanker LR Stephanie struck Sep 21 in southern corridor, bulker Cape Dao hit Sep 23 off Musandam (1 killed) (Windward/straits.live). Windward AIS panel dated Sep 24 showed 7 Hormuz transits (2 inbound, 5 outbound). Sep 25-26: Iran proposed 7-day reopening plan; reports Trump rejected it. Strait described as 'effectively closed'; pre-crisis baseline ~85/day.",
+  "researched_at_utc": "2026-09-26T18:12:16Z"
+ },
+ {
+  "cid": "0x5b65397bb1d4fcb706f433f1cb4d223af30e546ca6886a3991d63c6282ccc1b3",
+  "q": "Will Z.ai be the third-best Math AI lab at the end of September 2026?",
+  "p_yes": 0.52,
+  "confidence": "low",
+  "evidence": "arena.ai Text Math no-style-control (fetched 2026-09-26, last update Sep 25). Labs: 1 Anthropic 1532.8, 2 Google 1527.8 (plus gemini-3.7 1510.8, 3.6 1504), 3 Z.ai glm-5.3-flash 1499.13 (+/-19, 920 math votes; also glm-5.3-max 1493.1), 4 Alibaba qwen3.8-max 1497.68 (+/-18, 1,036 votes), 5 Xiaomi mimo-v2.6-pro 1497.41 (+/-41, only 206 votes), 6 Meta muse-spark-1.3-max 1497.40 (+/-26, 475), 7 Moonshot kimi-k3-max 1492.85, DeepSeek v4.1-flash-max 1492.73 (+/-31, 322). Places 3-6 within 1.7 points; math ratings are very noisy. With no update before Sep 30 noon ET Z.ai stays 3rd; text leaderboard updated Sep 2, 11, 13, 25 (roughly 50-60% chance of another update in window). Simulation of an update gives Z.ai ~20% to remain 3rd (Xiaomi ~36% due to huge variance, Meta ~20%, Alibaba ~14%, DeepSeek ~10%). StepFun Step 5 Preview (released Sep 18) could be added to text arena.",
+  "researched_at_utc": "2026-09-26T18:05:39Z"
+ },
+ {
+  "cid": "0x8efcca041259e46ebe50f9b7f5fadd0edc665370aa7cce228e3f9e0ccf6692f2",
+  "q": "Israel military action against Lebanon on September 28?",
+  "p_yes": 0.8,
+  "confidence": "medium",
+  "evidence": "Context: June 2026 US-brokered Israel-Lebanon framework (gradual Israeli withdrawal, Lebanese army deployment, Hezbollah disarmament); Israeli forces still occupy parts of south Lebanon. Early Sept 2026 escalation: Israeli air attacks killed 27+ over three days (Al Jazeera Sep 4-7; WaPo Sep 8 'Israel ramps up strikes'), IDF strikes Sep 5 after Hezbollah drone attack. Sep 12: Israel-Lebanon talks postponed amid strikes/demolitions. Sep 19: two Israeli airstrikes in Nabatieh plus one on paramedics (Al Jazeera). Sep 25: Israeli air strike on valley between Froun and Ghandourieh, plus demolitions near Taybeh/Deir Siryan (Al Jazeera); IDF interceptor launched over south Lebanon on 'false identification' (ToI). Lebanese PM Salam at UNGA Sep 25 demanded withdrawal. Times of Israel liveblogs Sep 24-25 contained few Lebanon-strike entries, suggesting lower-intensity days. Only air/drone/missile strikes count (artillery, demolitions excluded). Sep 28 is a Monday during Sukkot.",
+  "researched_at_utc": "2026-09-26T18:13:27Z"
+ },
+ {
+  "cid": "0x806e395283bea82d1c0db30bc5329ebff7167b6567a725b4b8a58d7b9a434dc6",
+  "q": "Will Łukasz Gibała win the 2026 Kraków mayoral election?",
+  "p_yes": 0.82,
+  "confidence": "medium",
+  "evidence": "Early election after KO mayor Aleksander Miszalski was recalled in a May 24, 2026 referendum (Notes From Poland). First round Sep 27; runoff Oct 11 if no one >50%. Final polls: IBRiS for Polsat (Sep 23-24, n=1000): Gibala 27.2, Piatkowska (KO/PSL) 23.5, Drewnicki (PiS) 15.4, Gosek-Popiolek (Lewica) 9.6, Owca (Razem) 9.0, Klimek 4.6, undecided 10.5. OGB for LoveKrakow/Polsat (Sep 23-24, n=750): Gibala 32.9 (down from 39.2 in OGB Sep 20), Piatkowska 27.8 (up from 23.7), Drewnicki 16.1, Owca 11.0, Gosek-Popiolek 7.0. Runoff Gibala vs Piatkowska: OGB Sep 23-24 60.6-39.4; OGB Sep 15-17 62.5-37.5. Commentary notes Gibala (independent, 'Krakow dla Mieszkancow') losing ground as party candidates mobilize. Precedent: in the 2024 runoff Gibala lost narrowly to Miszalski (~49-51) after placing second in round one. Gibala leads every published poll.",
+  "researched_at_utc": "2026-09-26T18:14:36Z"
+ },
+ {
+  "cid": "0xba906a5e6b422471686de494fbf6cdb2ff80ab1f65b3e991681cbc8b12abc110",
+  "q": "Will the 10-year Treasury yield hit 5.20% in September?",
+  "p_yes": 0.5,
+  "confidence": "low",
+  "evidence": "Treasury Daily Par Yield Curve, 10 Yr (2026 CSV fetched Sep 26): Sep 25 5.17, Sep 24 5.18, Sep 23 5.11, Sep 22 4.96, Sep 18 5.01, Sep 10 4.95, Sep 1 4.79, Aug 31 4.75. No 2026 close at or above 5.20 so far. Only Sep 28, 29, 30 remain (3 sessions); need a par-curve close of 5.20 (~+3bp). Intraday Sep 24 the 10y touched ~5.223% but closed 5.18 on the par curve; CNBC Sep 25: yield little changed ~5.163-5.17%, near highest since June 2007, amid a global bond selloff; Fed Gov. Barr said further hikes likely needed (Sep 23). Oil eased Friday on hopes of a phased US-Iran Hormuz deal; Sep 26 reports say Trump rejected Iran's proposal. Recent daily 10y changes have sd ~5-7bp. Upcoming: JOLTS Sep 29; quarter-end Sep 30 (index-extension demand). Barrier model (3 daily closes, 3bp barrier, sd 5-6.5bp) gives roughly 50-57%.",
+  "researched_at_utc": "2026-09-26T18:15:16Z"
+ },
+ {
+  "cid": "0xc058e13e8fba7b58bd4558b928dc69d52cb62c3e14d07fc1c407affd61c6593a",
+  "q": "Will \"A Different World: Season 1\" be the #2 US Netflix show this week?",
+  "p_yes": 0.7,
+  "confidence": "medium",
+  "evidence": "Resolves on US weekly TV list for Sep 21-27 (published Sep 29). Prior week (Sep 14-20) US: 1 Monster: The Lizzie Borden Story (wk1), 2 Crew Girl, 3 Jo Koy, 4 Raw, 5 The Perfect Lie... A Different World (10 x ~30 min sequel) dropped all episodes Thu Sep 24. Daily US Netflix TV ranks via StreamScope/FlixPatrol: pages dated Sep 21-25 had Monster #1 every day except one (Raw #1 on Sep 23 page); Sep 24 page #2 Raw; Sep 25 page: 1 Monster, 2 Wonka's The Golden Ticket, 3 Not a Stranger (ADW not yet in top 10); current page dated Sep 26: 1 Monster, 2 A Different World, 3 Wonka's The Golden Ticket, 4 Not a Stranger, 5 Crew Girl, 6 Jo Koy, 7 The Gentlemen, 8 Death of the Pastor's Wife, 9 Doc, 10 I Survived a Serial Killer. Wonka's The Golden Ticket released 7 of 9 episodes Wed Sep 23 (one extra day of viewing vs ADW; finale Sep 30). Monster has a full 7-day week 2. Other releases this week: Doc S2, Party Down, Law & Order S25, GBBS S14 (Sep 25).",
+  "researched_at_utc": "2026-09-26T18:18:11Z"
+ },
+ {
+  "cid": "0xfc6a3c46a38448ce21e372bf089115575b1b6d298170a4287f6592f7867701fe",
+  "q": "Will Ukraine target Moscow on September 27, 2026?",
+  "p_yes": 0.52,
+  "confidence": "low",
+  "evidence": "Rules count drone/missile attacks directed at Moscow even if intercepted (Moscow time, Sep 27). Recent Sobyanin/TASS reports of drones shot down approaching Moscow: Aug 23 (6); Sep 3 (70+ since midnight) and late Sep 3/early Sep 4 (10+); Sep 16-17 (2); Sep 19 (5); Sep 19-20 'largest ever' attack (~450 on approach to Moscow per Sobyanin; refinery hit, 3 killed in region) during Russia's election; Sep 25 (17, per Vedomosti/M24); Sep 26 (20 by 08:36 MSK, per Izvestia/TASS). Searches found no Moscow-bound drone reports for Sep 21-24, suggesting attack days cluster (roughly 8-12 of the first 26 days of September). Sep 25 and 26 were consecutive attack days. Diplomatic backdrop Sep 26: Trump says Ukraine settlement possible before winter; Lavrov references Anchorage understandings; Russian strikes on Kyiv continue.",
+  "researched_at_utc": "2026-09-26T18:19:48Z"
+ }
+]
