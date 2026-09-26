@@ -1,0 +1,99 @@
+# 04 — Polymarket crypto price-threshold markets: model vs market, non-latency edge?
+
+*Status: IN PROGRESS (written incrementally). Date of analysis: 2026-09-26.*
+Code: `src/crypto/`. Cached data: `data/crypto/` (not committed).
+
+## 0. Scope and data inventory
+
+### 0.1 Market families (discovered via gamma-api `/series` + `/events/keyset?series_id=`)
+
+| Family | Gamma series (BTC) | Other assets | Cadence / history | Resolution rule (verified) |
+|---|---|---|---|---|
+| (a) "Bitcoin above ___ on <date>?" | `btc-multi-strikes-weekly` (id 45) | ETH 42, SOL 10022, XRP 10024 | one event per day, listed 7d ahead, ~11 strikes; daily format since 2025-08-13 (391 BTC events) | Binance BTC/USDT **1m candle opened 12:00 ET**, "Close" > strike. Verified: 4217/4218 closed BTC markets reproduce from Binance klines (the 1 miss was a parse artefact). |
+| (a') hourly "above ___ on <date>, <h> ET" | `bitcoin-multi-strikes-hourly` (11372) | ETH 11373 | since 2026-03-20, 4353 events / 70,920 markets | close of the Binance **1h candle ending** at the stated time (= 1m candle opened at T−60s). 70,880/70,880 verified. Median event volume only ≈ $2k. |
+| (b) "What price will Bitcoin hit in <month> / <week> / on <day>?" | monthly 10016, weekly 10151, daily 10200 | ETH/SOL/XRP equivalents | monthly since 2024-10, weekly since 2025-07, daily since 2025-08 | any Binance BTC/USDT 1m candle **High ≥ strike** (↑) or Low ≤ strike (↓) within the window (ET). After a strike is hit, a re-listed copy "…-from-<date>" is often created. |
+| (c) "Bitcoin price on <date>" range buckets (neg-risk) | `bitcoin-neg-risk-weekly` (10041) | ETH 10065, SOL 10107, XRP 10247 | daily since 2025-02, 417 events | same noon-ET 1m close as (a); boundary goes to upper bucket |
+| (d) Up/Down | daily 41, 4h 10331, hourly 10114, 15m 10192, 5m 10684 | ETH etc. | hourly since 2025-05, 15m since 2025-09 | close vs open of the Binance candle for the period |
+
+### 0.2 Fees (exact)
+All these crypto markets now carry `feeType=crypto_fees_v2`, `feeSchedule={rate:0.07, exponent:1, takerOnly:true, rebateRate:0.2}`.
+Per docs.polymarket.com/trading/fees: **taker fee (USDC) = shares × 0.07 × p × (1−p)**; makers pay nothing (and get a 20 % rebate share).
+Examples: at p=0.50 → 1.75 ¢/share (3.5 % of notional); p=0.90 → 0.63 ¢/share (0.7 %); p=0.97 → 0.20 ¢/share; p=0.05 → 0.33 ¢/share (6.65 % of notional).
+Fees were switched on for the daily "above" family during **March 2026** (0 % of markets with fees before 2026-03, 100 % from 2026-04). All backtests below charge the current fee on every taker fill, including in the pre-fee period (conservative, and it is what applies going forward). The Taker Rebate Program (since 2026-05-28) is ignored.
+
+### 0.3 Data sources
+* Polymarket: gamma-api (events/markets metadata, outcomes), `clob.polymarket.com/prices-history` (YES-token **midpoint** series; fetched at 15-min fidelity for the market life + 1-min fidelity for the last 26 h), `data-api.polymarket.com/v2/trades` (all taker fills per market, cursor-paginated, no 10k cap), live `/book`.
+* Underlying: **Binance BTCUSDT/ETHUSDT/SOLUSDT/XRPUSDT 1m klines** — the actual resolution source — from `data.binance.vision` (archive) and `data-api.binance.vision` (the market-data-only endpoint is not geo-blocked, unlike api.binance.com). 2024-09-01 → 2026-09-26.
+* Deribit DVOL (BTC, ETH) hourly 2024-09 → 2026-09.
+
+## 1. Fair-value model (shared by all families) — no look-ahead
+
+* **Price convention.** Price "at" decision time t = close of the last completed Binance 1m candle (opened t−60 s). Daily "above"/range markets settle on the close of the candle opened at T (12:00 ET); hourly on the candle opened T−60 s.
+* **Vol inputs available at t:** Deribit DVOL (close of the last *completed* hourly candle; BTC/ETH only), EWMA vol of de-seasonalised 5-min Binance returns (half-lives 6 h / 24 h / 168 h), and a minute-of-week seasonal variance profile estimated on the trailing 365 days *before the decision month* (captures the US-hours vol bulge: e.g. the hour before noon ET carries ~1.8× average variance, weekends ~0.5×).
+* **Distribution:** r = ln(S_T/S_t) ~ Student-t(ν) with scale s = exp(β·[1, ln DVOL, ln RV6h, ln RV24h, ln RV168h]) · √(τ·seasonal-fraction(t,T)). Three specs: `dvol` (DVOL only), `rv` (realised only), `combo`. Fitted by MLE separately for 14 horizons (15 min … 30 d) on **all hourly (t,T) pairs** of Binance history (2024-10 → ), not just market times (~8–17k samples per horizon).
+* **Walk-forward:** for a decision in calendar month M the model is refitted using only samples whose outcome time T+2 min ≤ first day of M (expanding window). Fitted ν ≈ 3.7–6 (fat tails), DVOL coefficient ≈ 1.1–1.4 at short horizons.
+* P(S_T > K) = t_ν.sf(ln(K/S_t)/s); Gaussian variant with matched variance also computed (it is uniformly worse in log-loss). Range bucket = difference of two such probabilities; touch = empirical survival of the standardised running extreme (§3).
+
+## 2. Family (a): "Bitcoin above ___ on <date>?" (daily, noon ET)
+
+### 2.1 Sample
+* 373 BTC events / 4,134 strikes with usable history, decision times 2025-09-03 → 2026-09-25 (events are listed 7 days ahead with ~11 strikes spaced $2k apart). Panel = each strike at h ∈ {120, 72, 48, 24, 12, 6, 3, 1, 0.5} hours before expiry: 36,950 rows. Market price = CLOB mid at t (last point ≤ t, ≤30 min stale; 1-min fidelity for h ≤ 25h).
+* Liquidity: median taker notional ≈ $240k per event in the 24 h before T−24 h (all strikes), concentrated in the 2–3 strikes around the money. 1.4 M taker fills were matched to the prevailing mid: **effective half-spread** median 0.5 c (tails) – 0.75 c (mid-range), mean 0.55–0.85 c; larger at >24 h to expiry and in the last hour (mean 1.1 c).
+* Live books (snapshot 2026-09-26 14:09 UTC): next-day event: near-ATM spread 1 c, ~$400 within 1 c of the ask and ~$7.5k within 5 c; events 2–6 days out: 3–4 c spreads, ~$1–7k within 5 c per strike. ETH similar but thinner; **SOL/XRP spreads 7–10 c** in the mid range.
+* Outcomes: all 36,950 rows reproduce exactly from Binance data (0 mismatches).
+
+### 2.2 Model vs market (out-of-sample, BTC)
+Log-loss (LL) / Brier (BS) of the market mid vs the walk-forward model:
+
+| h (hours to expiry) | n | LL market | LL model (combo) | LL model (rv) | BS market | BS model (combo) |
+|---:|---:|---:|---:|---:|---:|---:|
+| 120 | 4033 | 0.3196 | 0.3112 | **0.3095** | 0.0967 | 0.0952 |
+| 72 | 4070 | 0.2429 | 0.2403 | **0.2399** | 0.0741 | 0.0740 |
+| 48 | 4082 | 0.1971 | 0.1956 | **0.1955** | 0.0606 | 0.0604 |
+| 24 | 4102 | 0.1327 | **0.1320** | 0.1322 | 0.0404 | 0.0402 |
+| 12 | 4131 | 0.0995 | 0.0997 | **0.0994** | 0.0298 | 0.0299 |
+| 6 | 4134 | 0.0840 | 0.0831 | **0.0829** | 0.0248 | 0.0246 |
+| 3 | 4130 | **0.0726** | 0.0735 | 0.0733 | 0.0215 | 0.0217 |
+| 1 | 4134 | 0.0388 | 0.0373 | 0.0373 | 0.0112 | 0.0109 |
+| 0.5 | 4134 | 0.0241 | 0.0228 | 0.0228 | 0.0068 | 0.0065 |
+
+The spot-only model is **as good as or marginally better than the market** at every horizon except 3 h. A logistic blend y ~ logit(mid)+logit(model) on rows with 2 c<mid<98 c puts most weight on the model (e.g. h=120: b_model=1.10 (z=6.8), b_mid=−0.18; h=24: 0.71 (z=2.1) vs 0.27; h=1: 1.30 (z=2.9) vs −0.36) — naive z's, strikes in an event are correlated, so treat as indicative. So the market is *slightly* noisier than a good vol model, but the differences are small in probability units (typically 1–3 c), i.e. the same order as spread + fee.
+
+### 2.3 Calibration of the market itself (all strikes, BTC)
+Selected bins (full table in `data/crypto/report_above_BTC.md`):
+
+| horizon | mid bin | n | mean mid | realised | z |
+|---|---|---:|---:|---:|---:|
+| 0.5–1 h | ≤2 c | 3935 | 0.0013 | 0.0003 | −1.9 |
+| 0.5–1 h | 98–100 c | 3643 | 0.9985 | 0.9992 | 1.1 |
+| 3–12 h | 2–5 c | 418 | 0.032 | 0.050 | 2.2 |
+| 3–12 h | 98–100 c | 4699 | 0.9973 | 0.9994 | 2.8 |
+| 24–48 h | 60–70 c | 177 | 0.650 | 0.542 | −3.0 |
+| 72–120 h | 10–20 c | 555 | 0.143 | 0.090 | −3.5 |
+| 72–120 h | 40–50 c | 338 | 0.453 | 0.385 | −2.5 |
+
+* **Far tails (≤1–3 c) are over-priced on both sides** (the cheap token wins 0.3–0.7× its price at ≤1 c; at 0.5–1 h the 1–3 c bucket wins 0.55 % vs 1.75 % priced, symmetric for calls and puts) — a genuine longshot bias, but worth only ≈0.1–1.2 c per share.
+* At multi-day horizons YES is over-priced across *all* mid-range bins. Splitting by which side is cheap shows this is **directional** (upside strikes over-priced, downside strikes under-priced): it is the 2025-10 → 2026-06 BTC drawdown (126k → 58k), not a structural bias — the implied median (probit fit of the strike ladder) is within a few bp of spot, i.e. the market prices zero drift, as does the model.
+* Implied central width (probit fit per event) vs realised: the market's ±1σ band covers 68–74 % of outcomes (nominal 68.3 %) at 3–120 h — **market vol is about right**; the fitted t-model is slightly too peaked in the centre (covers 55–69 %) but better in the tails.
+
+### 2.4 Trading backtests (BTC, taker, fees charged exactly)
+Rule: at decision time t, buy YES if p_model − ask_est − fee(ask_est) > θ, or NO symmetrically; ask_est = mid + cost, cost = half-spread + slippage = **1.5 c (h ≤ 6 h), 2 c (6–24 h), 3 c (> 24 h)** in the 10–90 c range, 1 c for 3–10 c / 90–97 c, 0.5 c beyond. Only tokens priced 5–95 c. Three fill models: `mid0` (execute at ask_est at t), `mid5` (signal at t, execute at mid(t+5 min)+cost — a slow trader), `trade_slow` (first real taker fill in (t+60 s, t+15 min], never dropping a signal for lack of a fill, and skipping if the fill is >1 c worse than planned). ROI = Σ PnL / Σ cost (per $ deployed); `t_cl` = t-stat of per-event summed returns (events clustered). P&L columns = fixed $ stake per trade.
+
+**Pre-registered rule** (spec=combo, θ=3 c, all 9 horizons pooled; no parameter search):
+
+| fill | period | trades | events | hit | avg px | ROI | t_cl | PnL $10 | PnL $50 | PnL $200 | maxDD $50 | trades/day |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| mid0 | all (2025-09→2026-09) | 1070 | 286 | 0.782 | 0.734 | +5.2 % | 2.56 | 1,222 | 6,109 | 24,436 | 635 | 2.8 |
+| mid0 | train (<2026-03) | 676 | 156 | 0.811 | 0.762 | +4.9 % | 2.47 | 618 | 3,091 | 12,363 | 671 | 3.8 |
+| mid0 | **test (≥2026-03, fee era)** | 394 | 133 | 0.734 | 0.685 | **+5.6 %** | **1.49** | 604 | 3,018 | 12,073 | 687 | 1.9 |
+| mid5 | test | 394 | 133 | 0.734 | 0.710 | +1.9 % | 1.14 | 425 | 2,125 | 8,500 | 862 | 1.9 |
+| trade_slow | test | 306 | 116 | 0.761 | 0.706 | +6.4 % | 1.73 | 659 | 3,296 | 13,183 | 571 | 1.5 |
+
+Test-period breakdown by horizon (mid0): only h=120 h is individually notable (141 trades, ROI +10.3 %, t_cl 2.07); h=48 h is significantly negative (−14.6 %, t −2.1); others are noise.
+
+**Walk-forward parameter selection** (grid h × spec × θ ∈ {0,2,3,5,8 c}, choose top-5 by TRAIN ROI, report TEST): 4 of 5 selected configs lose or are flat OOS (e.g. h=72/rv/θ=3 c: train +14.9 % → test −6.8 %); the exception is h=120/rv/θ=3 c: train +13.4 % (88 trades) → **test +14.5 % (128 trades, t_cl 2.13; +12 % with 5-min delay; +14 % with real fills)**. Across all 87 configs with ≥20 test trades: median test ROI +1.3 %, 52 % positive, 7 % with t_cl>2 — i.e. close to what noise would produce.
+
+**Selling far-tail longshots** (buy the 97–99.5 c side when the cheap side is 0.5–7 c, h = 0.5–24 h): per-trade ROI between −4 % and +2 % across 24 cells, none robust in both halves; the bias exists but is smaller than half-spread + fee.
+
+### 2.5 Verdict on family (a) (BTC)
+No robust, non-latency edge after costs. A good spot/vol model is marginally better than the market mid, and a pre-registered model-vs-market rule earned +5 % per $ over 12 months (t≈2.6), but only +1.9–6.4 % (t 1.1–1.7) in the out-of-sample fee era, and ~60 % of the edge disappears if execution is 5 minutes late (the market converges toward spot-implied fair value within minutes — a latency component). The one surviving pocket is **5-days-ahead (T−120 h) pricing** (~0.6 trades/day, +10–15 % ROI, t≈2): markets that were just listed, have 3–4 c spreads and a few $k of depth per strike. Capacity ≈ $50–200 per trade, i.e. ≲ $100/day deployed, expected profit of order $5–20/day — economically negligible and statistically fragile.
