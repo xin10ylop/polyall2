@@ -56,6 +56,14 @@
     "researched_at_utc": "2026-09-26T18:08:01Z"
   },
   {
+    "cid": "0xea3aa2a96bc7737983d6347df694b2cb3b80fd91490b4482437a4bb5d244d798",
+    "q": "Will MrBeast Gaming's next video get between 20 and 22.5 million views on day 1?",
+    "p_yes": 0.1,
+    "confidence": "low",
+    "evidence": "Next MrBeast Gaming video posted Sep 26, 2026 16:00 UTC: 'I Found My 13 Year Old Minecraft World' (channel RSS). Live YouTube counter (innertube 'next' endpoint): 1,050,152 views / 97,572 likes at 18:24 UTC (2h24m) and 1,132,135 / 102,097 at 18:33 UTC, i.e. displayed views growing ~0.55M/hour vs likes ~31K/hour (incremental like ratio ~5.5%, cumulative ~9%). Prior videos' lifetime like ratios 1.0-1.8% (Sep 12 video 1.02%), suggesting the displayed counter is lagging validation; raw counter trend alone extrapolates to only ~7-9M at 24h, while like-based extrapolation (~350-420K day-1 likes at 1.6-2.7% ratio) gives ~13-26M. Recent uploads: 51.9M (Sep 12, 2 weeks), 44.9M (Aug 29), 54.4M (Aug 15), 69.5M (Aug 1); reported opening weeks ~40-50M. YouTube counts views from first frame since Aug 24, 2026. Bracket 20-22.5M.",
+    "researched_at_utc": "2026-09-26T18:33:37Z"
+  },
+  {
     "cid": "0xcde1b5bd38e8948d035c2a7cf856149f39df9662982d336dc1f44ebaa132aa71",
     "q": "Will Donald Trump post 120-139 Truth Social posts from September 22 to September 29, 2026?",
     "p_yes": 0.27,
