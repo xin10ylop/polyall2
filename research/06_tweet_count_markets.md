@@ -262,3 +262,79 @@ BT_MODE=loose python3 src/tweets/bt_build.py 3                             # nee
 python3 src/tweets/live_books.py ; python3 src/tweets/live_signals.py      # live books / live model check
 # analysis: functions in src/tweets/bt_eval.py (load, trades, summarize, load_pc, trades_b, summarize_b, snapshot_scores)
 ```
+
+## 8. Follow-up: maker variant on small-account buckets (trade-through fills only)
+
+**Question:** can capacity grow beyond the ~$54/day taker edge by resting limit orders at model fair value ± a margin?
+
+**Set-up** (`src/tweets/maker_bt.py`, fills in `data/tweets/maker_fills.parquet`, grid in `data/tweets/maker_grid.csv`):
+* Accounts: WH, Cruz, Zelenskyy, NYC Mayor, CZ, Khamenei. Outage events and xtracker stalls >120 min excluded.
+* At each decision step (every `life` hours) post:
+  * a YES bid at b = q − m (rounded down to tick), only if 0.01 ≤ b ≤ mid − 0.5c;
+  * a NO bid at 1 − a, where a = q + m (rounded up), only if a ≤ 0.99 and a ≥ mid + 0.5c.
+  The price conditions make these genuine resting (non-crossing) orders.
+* Each order lives (t, t + life] and is replaced at the next step.
+* **Fill only on trade-through**: a later taker print strictly through our price within the lifetime
+  (YES bid ← YES-equivalent taker sells at < b; NO bid ← taker buys at > a).
+* Fill size = min($200 order, shares of the through-prints). Filled at our limit, **no fee**, held to resolution.
+* Grid: margin m ∈ {3, 5, 8, 12} c × life ∈ {1 h, 6 h} × side ∈ {YES, NO, both} = 24 configs.
+* IS = decision times before 2026-06-01 (31 days of small-account history); OOS = Jun–Sep (117 days).
+
+**Results: negative everywhere.**
+* **0 of 24 configs are positive OOS.** OOS ROI ranges from −4.4 % to −35 %, and IS is negative as well.
+* The IS-best config (6 h, 5 c, YES bids; IS ROI +1.3 %, t 0.06) gives OOS −23.5 %, week-clustered t −6.5.
+
+| OOS (Jun–Sep), both sides | fills/day | $ filled/day | PnL/day | ROI | week-clustered t | max DD |
+|---|---:|---:|---:|---:|---:|---:|
+| 1 h, 3 c | 29.4 | $638 | −$52 | −8.1 % | −1.9 | $7.4k |
+| 1 h, 5 c | 26.5 | $564 | −$42 | −7.4 % | −2.0 | $6.0k |
+| 1 h, 8 c | 21.3 | $442 | −$58 | −13.2 % | −2.7 | $7.8k |
+| 1 h, 12 c | 16.1 | $344 | −$46 | −13.3 % | −2.7 | $6.5k |
+| 6 h, 3 c | 24.7 | $788 | −$117 | −14.9 % | −5.9 | $13.7k |
+| 6 h, 5 c | 22.4 | $751 | −$110 | −14.7 % | −5.1 | $12.9k |
+| 6 h, 8 c | 18.8 | $634 | −$107 | −16.9 % | −4.2 | $12.5k |
+| 6 h, 12 c | 14.9 | $518 | −$107 | −20.6 % | −5.0 | $12.6k |
+
+* **Capacity does grow**, about 10–15× the taker variant: $340–790/day filled, and through-print volume of
+  $420–1,070/day at $200 order caps. But the edge flips sign.
+* The mechanism is classic adverse selection. A through-print means the market moved past our stale fair
+  value, usually because posts arrived (or did not) after we quoted.
+* Losses are largest close to the end: for the IS-best config, ROI is −53 % for fills <12 h before the end,
+  −23 % at 12–48 h, −14 % at 48–96 h and −6 % at >96 h.
+* Losses are broad across accounts: only NYC Mayor is positive (+19 %); WH −29 %, CZ −49 %, Cruz −36 %,
+  Zelenskyy −20 %.
+* The least-bad config (1 h, 12 c, NO only: −4.4 %, t −0.7) is positive only at >48 h to the end (+17–18 %).
+  That is a post-hoc slice from a grid where nothing survived IS selection, so it should not be trusted.
+
+**LP rewards (upside NOT counted above).** `GET https://clob.polymarket.com/rewards/markets/current` (all pages),
+joined to the open count buckets, snapshot 2026-09-26 (`data/tweets/books/rewards_*.parquet`):
+
+| account | rewarded buckets / open buckets | reward pool $/day (sum of rate_per_day) | rewards_max_spread | rewards_min_size |
+|---|---|---:|---:|---:|
+| ZelenskyyUa | 23 / 30 | 305 | 4.5 c | 20 |
+| tedcruz | 27 / 30 | 300 | 4.5 c | 20 |
+| WhiteHouse | 11 / 23 | 200 | 4.5 c | 20 |
+| NYCMayor | 9 / 32 | 120 | 5.5 c | 20 |
+| cz_binance | 8 / 33 | 120 | 5.0 c | 20 |
+| khamenei_ir | 8 / 39 | 100 | 4.5 c | 20 |
+| *(small accounts total)* | | **≈ $1,145/day** | | |
+| realDonaldTrump | 17 / 27 | 400 | 5.5 c | 50 |
+| elonmusk | 29 / 157 | 600 | 5.5 c | 50 |
+
+* A typical event pays about $100/day, split over its rewarded buckets.
+* Rewards are shared pro rata among qualifying makers: quotes within `max_spread` of the mid, ≥ `min_size`
+  shares, scored by closeness to mid.
+* The small-account books are nearly empty (Section 6), so a single diligent LP could plausibly earn a large
+  share. The reward pool (~$1.1k/day) is **an order of magnitude larger than the maker losses measured above
+  ($40–120/day)**.
+* However, qualifying quotes must sit within 4.5–5.5 c of the mid. That is exactly where the trade-through
+  test shows the worst adverse selection, and it is the zone where research/05 found maker fills heavily
+  adversely selected market-wide.
+* Whether reward capture outweighs pick-off losses depends on the competing LP depth and the reward-scoring
+  details (two-sided / quadratic scoring, sampling frequency). This backtest cannot measure either; it needs a
+  separate study with historical reward-share data.
+
+**Conclusion of the follow-up:** a model-anchored maker strategy on small-account buckets does **not** scale the
+taker edge. It raises fills 10–15× but turns the ~+19 % taker ROI into −4 % to −35 % (0/24 configs positive
+OOS). The only unexploited upside is LP-reward farming, which is a different strategy (liquidity provision
+priced against rewards) and is not supported or refuted by this test.

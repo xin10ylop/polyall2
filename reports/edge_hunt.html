@@ -1,0 +1,181 @@
+<title>Polymarket Edge Hunt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+:root{
+  --paper:#f4f6f3; --panel:#ffffff; --ink:#1a2326; --muted:#56646a; --rule:#d6dcd8;
+  --accent:#1c6a75; --accent-soft:#e2eef0;
+  --good:#2b7550; --good-soft:#e3f1e8; --warn:#9a640f; --warn-soft:#f6ecd9; --bad:#a23d37; --bad-soft:#f6e3e1;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --cond:"IBM Plex Sans Condensed","IBM Plex Sans",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#0f1517; --panel:#151d20; --ink:#e1e8e6; --muted:#9aa8ab; --rule:#27333a;
+    --accent:#62b8c4; --accent-soft:#16303a;
+    --good:#64c28e; --good-soft:#14301f; --warn:#e2a84f; --warn-soft:#33260f; --bad:#e2776f; --bad-soft:#3a1a18;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#0f1517; --panel:#151d20; --ink:#e1e8e6; --muted:#9aa8ab; --rule:#27333a;
+  --accent:#62b8c4; --accent-soft:#16303a;
+  --good:#64c28e; --good-soft:#14301f; --warn:#e2a84f; --warn-soft:#33260f; --bad:#e2776f; --bad-soft:#3a1a18;
+}
+*{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;padding-inline:16px;padding-block:40px 72px}
+.wrap{max-width:1000px;margin:0 auto;display:grid;gap:48px}
+.col{max-width:720px}
+h1,h2,h3{font-family:var(--cond);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,3rem);font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.6rem;font-weight:600;margin-bottom:12px}
+h3{font-size:1.15rem;font-weight:600;margin:20px 0 6px}
+p{margin:0 0 12px}
+.eyebrow{font-family:var(--mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{font-size:1.15rem;color:var(--ink);max-width:68ch}
+.muted{color:var(--muted)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+header{display:grid;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:24px}
+.verdict{background:var(--panel);border:1px solid var(--rule);border-left:4px solid var(--accent);padding:20px 22px;display:grid;gap:10px}
+.verdict ul{margin:0;padding-left:1.1em;display:grid;gap:6px}
+.tbl{overflow-x:auto;border:1px solid var(--rule);background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:.92rem}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;background:var(--paper)}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.pill{display:inline-block;font-family:var(--mono);font-size:.72rem;letter-spacing:.04em;padding:2px 8px;border-radius:999px;white-space:nowrap;font-weight:500}
+.p-adopt{background:var(--good-soft);color:var(--good)}
+.p-pilot{background:var(--warn-soft);color:var(--warn)}
+.p-reject{background:var(--bad-soft);color:var(--bad)}
+.p-pend{background:var(--accent-soft);color:var(--accent)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--rule);padding:16px 18px}
+.card h3{margin-top:0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:.92rem}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-family:var(--mono);font-variant-numeric:tabular-nums}
+code,pre{font-family:var(--mono);font-size:.85rem}
+pre{background:var(--panel);border:1px solid var(--rule);padding:14px 16px;overflow-x:auto;margin:0 0 12px}
+a{color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section{display:grid;gap:8px}
+footer{border-top:1px solid var(--rule);padding-top:16px;font-size:.85rem;color:var(--muted)}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Polymarket · strategy research · 26 Sep 2026</div>
+  <h1>Polymarket Edge Hunt</h1>
+  <p class="lede">15+ strategy families tested with walk-forward backtests on real trade prints, an independent
+  audit, leaderboard forensics of 5,192 wallets and live paper monitors. This page reports what held up once
+  fees, fills and time were accounted for.</p>
+</header>
+
+<section class="col">
+  <div class="verdict" id="verdict">
+    <div class="eyebrow">Bottom line</div>
+    <p><strong>I did not find a strategy that meets all of your conditions at once</strong> (≤$100 start, ≥$100/day,
+    fills identical to the test, no speed, no decay). Every edge that survived out-of-sample testing is either small
+    in capacity or needs a data-speed advantage. The results in the table are what the evidence supports.</p>
+    <ul>
+      <li>Two small, non-speed edges survived out-of-sample: <strong>tweet-count markets for small X accounts</strong>
+      (+18.6% per trade, t 2.3, ≈$10/day) and <strong>selling daily BTC barrier longshots</strong> (+0.7% per trade,
+      both halves positive, ≈$25/day at $1k clips).</li>
+      <li>The biggest real money for small accounts is in <strong>weather observation-day trading</strong>, but it is a
+      60–120-second data race. Public feeds arrive after the edge is gone.</li>
+      <li>Liquidity-reward farming is real income, but small uninformed farmers net a median ≈+0.25%/day and lose in
+      about 1 month out of 3.</li>
+      <li><strong>Hard blocker:</strong> this research machine is geoblocked (US). Live trading must run from a
+      jurisdiction where Polymarket allows it, on your own account.</li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2>Scoreboard</h2>
+  <p class="col muted">OOS = out-of-sample (rules chosen on earlier data, scored on later data). ROI is per dollar
+  staked, after the taker fee <span class="num">rate × p × (1−p)</span>. Capacity is what the displayed books absorbed.</p>
+  <div class="tbl">
+  <table>
+    <thead><tr><th>Strategy</th><th>How it was tested</th><th>Result</th><th>Capacity</th><th>Speed needed</th><th>Verdict</th></tr></thead>
+    <tbody id="score">
+      <tr><td>Tweet counts, small X accounts (Cruz, Khamenei, CZ, NYC Mayor)</td><td>xtracker as-of counts, NegBin model, prints-confirmed fills, Jun–Sep OOS</td><td class="n">+18.6% ROI, t 2.3; 27/27 variants positive</td><td class="n">≈$54/day deployed → ≈$10/day</td><td>No (entries &gt;12 h before end)</td><td><span class="pill p-adopt">adopt · small</span></td></tr>
+      <tr><td>Sell daily BTC barrier longshots (YES 0.5–3¢, ≤12 h left)</td><td>7 months, 1,460 strikes, both halves, real fills</td><td class="n">+0.7%/trade; 4 losses (0.27% vs 0.8% break-even)</td><td class="n">≈3.6 trades/day, ≈$25/day at $1k</td><td>No</td><td><span class="pill p-adopt">adopt · tail risk</span></td></tr>
+      <tr><td>Weather: buckets killed by the station reading</td><td>40,228 deaths, exact-second prints vs METAR time</td><td class="n">+9% ROI at 60 s; ≈0 at 5 min; negative at 10 min</td><td class="n">$250–540/day if ≤2 min</td><td>Yes: public feed lags 274 s</td><td><span class="pill p-reject">reject · race</span></td></tr>
+      <tr><td>Weather: forecast / intraday probability model</td><td>ECMWF + NBM + obs, walk-forward</td><td class="n" id="wx-model">in progress</td><td class="n">—</td><td>—</td><td><span class="pill p-pend">pending</span></td></tr>
+      <tr><td>LLM research + Jev judge on niche markets</td><td>Forward test on 27 open markets (resolve 27–30 Sep)</td><td class="n" id="llm-fwd">in progress</td><td class="n">—</td><td>No</td><td><span class="pill p-pend">pending</span></td></tr>
+      <tr><td>Liquidity-reward farming (two-sided min-size quotes)</td><td>Live books + 243 real LP wallets (rewards vs PnL)</td><td class="n">Median net +0.25%/day; 35–40% losing months</td><td class="n">—</td><td>Needs fast cancels</td><td><span class="pill p-reject">reject</span></td></tr>
+      <tr><td>Crypto "above K" / range / up-down vs vol model</td><td>373 events, 3 fill models, OOS</td><td class="n">+1.9% with 5-min delay (t≈1); up-down edge vanishes at 1 min</td><td class="n">—</td><td>Up-down: yes</td><td><span class="pill p-reject">reject</span></td></tr>
+      <tr><td>Mentions: fade YES longshots</td><td>3,816 markets, executable NO buys</td><td class="n">In-sample +3–14% → Jul–Sep ≈0 (|t|&lt;1.3)</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
+      <tr><td>Favourite–longshot bias, maker bids on favourites</td><td>1.6M taker prints, trade-through fills</td><td class="n">Takers lose 25–45% on 0.1–0.5 buys, but guaranteed maker fills lose 2–40%</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
+      <tr><td>Box office after the Sunday estimate</td><td>254 events, BOM estimates vs prints</td><td class="n">Every model/market disagreement lost (−3% to −25%)</td><td class="n">$10–40/week (overnight effect)</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
+      <tr><td>Near-certain "bonds" (0.95–0.995)</td><td>Market-clustered taker prints</td><td class="n">≈0 to −3%; blow-ups in rules edge cases</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
+      <tr><td>Structural arbitrage (neg-risk sets, BTC above vs range)</td><td>7,359 live events; 4 days of strikes</td><td class="n">No executable gap after spreads</td><td class="n">—</td><td>—</td><td><span class="pill p-reject">reject</span></td></tr>
+      <tr><td>Jev as a forecaster (no evidence)</td><td>150 + 3,370 resolved markets</td><td class="n">AUC 0.61–0.63 vs market 0.87; adds nothing</td><td class="n">—</td><td>—</td><td><span class="pill p-reject">reject</span></td></tr>
+      <tr><td>Jev as a rules guard (station/unit check)</td><td>300 markets, half with a wrong spec</td><td class="n">AUC 1.00; 0 errors at 0.8</td><td class="n">$0.00002/check</td><td>—</td><td><span class="pill p-adopt">adopt</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section class="col" id="weather">
+  <h2>Weather markets</h2>
+  <p>Weather is the largest pool that small, consistent wallets actually win in. About 51 daily-high events trade
+  ≈$2.6M a day, and 45% of the money trades on the observation day between 11:00 and 18:00 local time.</p>
+  <h3>The station-reading race</h3>
+  <p>Once a METAR shows a temperature above a bucket, that bucket is effectively dead. The METAR matches the
+  resolution in 99.6–99.8% of days. Across 40,228 such deaths, cheap NO shares traded mostly in the first
+  15–90 seconds after the observation time. The public aviationweather.gov feed publishes a median
+  <span class="num">274 s</span> after the observation, when NO is already at <span class="num">0.998</span>.</p>
+  <div class="grid2">
+    <div class="card"><h3>If you see the reading 60 s after it is taken</h3><dl class="kv"><dt>ROI</dt><dd>+9.2%</dd><dt>P&amp;L/day</dt><dd>≈$541</dd><dt>Days positive</dt><dd>99%</dd></dl></div>
+    <div class="card"><h3>If you see it 10 min after</h3><dl class="kv"><dt>ROI</dt><dd>−3.0%</dd><dt>P&amp;L/day</dt><dd>≈−$11</dd><dt>Days positive</dt><dd>78%</dd></dl></div>
+  </div>
+  <p>The top wallets doing this (Weatherstappen, bhuumi) trade 40–200 s after the observation. They have faster
+  feeds than the public one. My own 2-minute live monitor saw zero dead buckets below 0.999 today.</p>
+  <h3 id="wx-model-h">Forecast and intraday models</h3>
+  <p id="wx-model-text" class="muted">Results pending from the walk-forward ECMWF/NBM model.</p>
+</section>
+
+<section class="col">
+  <h2>How Jev and the LLM are used</h2>
+  <p>Jev (TypeSafe <code>jev-1.13</code>) returns calibrated probabilities for typed questions. It has no web
+  access. Asked about outcomes with no evidence, it had no forecasting skill (AUC 0.61–0.63), and it had no
+  knowledge of 2026 outcomes either, so it does not contaminate backtests. As a verification gate it was perfect
+  on 300 station/unit checks. The bot runs it on every new market before trading, for about $0.00002 a check.</p>
+  <p>The LLM side does the research. A research agent gathers dated evidence per market (box-office trackers,
+  leaderboards, consensus figures). Jev then judges the evidence against the market's rules. This matches how the
+  most durable small wallets work (Started-with-20-USD: $20 in January, +$55k by September; Quarrelsome-Branch:
+  93% of 95 weeks profitable). A backtest can't measure this honestly, because web search leaks outcomes. So it
+  is running as a forward test on 27 open markets that resolve 27–30 September.</p>
+</section>
+
+<section class="col">
+  <h2>What starting with $100 realistically looks like</h2>
+  <p>The two adopted edges together deploy about $1.1k a day and earn roughly $30–35 a day. That needs
+  $1–2k of working capital, because barrier trades use $1k clips. From $100, the tweet-count edge alone earns
+  cents per day, since the books hold only $1–80 near the price. No tested strategy turns $100 into $100 a day.
+  The wallets that make $100–300 a day with about $1k either win the weather data race or research niche markets
+  by hand.</p>
+</section>
+
+<section class="col">
+  <h2>Run it</h2>
+  <p>Everything is on branch <code>claude/nice-fermi-75y27f</code>. The bot defaults to paper mode and refuses to
+  trade live from a geoblocked IP.</p>
+<pre>pip install polymarket-client requests pandas timezonefinder
+# paper mode (default): simulated fills against live books
+PAPER=1 python3 bot/strategies/dead_buckets.py
+python3 bot/settle.py            # mark paper fills to resolution
+# live (only from an allowed jurisdiction, your own account)
+PAPER=0 POLYMARKET_PRIVATE_KEY=... POLYMARKET_WALLET_ADDRESS=... python3 bot/strategies/...</pre>
+</section>
+
+<footer>Research notes: <code>research/01–10</code>, audit: <code>research/audit_lp_rewards.md</code>.
+Data in <code>data/</code> is not committed. Nothing here is financial advice. Past edges decay; size positions so a
+full loss of any single trade is survivable.</footer>
+</div>

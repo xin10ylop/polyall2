@@ -80,8 +80,8 @@ def p_hit_emp(z_sorted, x):
 
 
 def make_panel(asset='BTC', series_list=('bitcoin-hit-price-monthly', 'bitcoin-hit-price-weekly', 'bitcoin-hit-price-daily'),
-               spec='combo', rebuild=False):
-    out = DATA / f'panel_touch_{asset}.parquet'
+               spec='combo', rebuild=False, offsets=(12, 6, 3, 1), daily16=True, tag=''):
+    out = DATA / f'panel_touch_{asset}{tag}.parquet'
     if out.exists() and not rebuild:
         return pd.read_parquet(out)
     F = Features(asset)
@@ -121,8 +121,8 @@ def make_panel(asset='BTC', series_list=('bitcoin-hit-price-monthly', 'bitcoin-h
             t_hit = int(seg.index.values[hit_idx[0]]) if len(hit_idx) else None
             g = ph_g.get(m.condition_id)
             trg = tr_g.get(m.condition_id)
-            dts = list(range((max(W0, m.t_open) // 86400) * 86400 + 16 * 3600, W1 - 3600, 86400))
-            dts += [W1 - int(x * 3600) for x in (12, 6, 3, 1)]
+            dts = list(range((max(W0, m.t_open) // 86400) * 86400 + 16 * 3600, W1 - 3600, 86400)) if daily16 else []
+            dts += [W1 - int(x * 3600) for x in offsets]
             for t in sorted(set(dts)):
                 if t <= max(W0, m.t_open) + 1800 or t >= W1 - 1800:
                     continue
@@ -147,12 +147,23 @@ def make_panel(asset='BTC', series_list=('bitcoin-hit-price-monthly', 'bitcoin-h
                     row['bid_slow'] = float(sy2.px.iloc[0]) if len(sy2) else np.nan
                     a24 = np.searchsorted(tt, t - 86400); a0 = np.searchsorted(tt, t)
                     row['usd_24h'] = float(trg.usd.values[a24:a0].sum())
+                    # capacity proxy: shares of YES-sell-equivalent (= NO buying) taker flow from t to expiry
+                    aw = np.searchsorted(tt, W1)
+                    fl = trg.iloc[a0:aw]
+                    row['no_flow_sz'] = float(fl.loc[fl.dir == -1, 'size'].sum())
+                    row['no_flow_usd'] = float((fl.loc[fl.dir == -1, 'size'] * (1 - fl.loc[fl.dir == -1, 'px'])).sum())
                 rows.append(row)
     pn = pd.DataFrame(rows)
     # features at t with horizon tau
     ft = F.build(pn.t.values, pn.W1.values - 60)
     for c in ['S_t', 'tau_min', 'seas', 'rv6h', 'rv24h', 'rv168h', 'dvol']:
         pn[c] = ft[c].values
+    # realised 1h vol at t (annualised, from 1m log returns in (t-3600, t])
+    lc = np.log(spot['c'].values)
+    r2 = np.concatenate([[0], np.cumsum(np.diff(lc) ** 2)])
+    idx0 = int(spot.index.values[0])
+    k = ((pn.t.values - 60 - idx0) // 60).astype(int)
+    pn['rv1h'] = np.sqrt((r2[k] - r2[np.maximum(k - 60, 0)]) * 365 * 24)
     months = sorted(pd.to_datetime(pn.t, unit='s').dt.strftime('%Y-%m').unique())
     P = fit_models(tr, months, spec)
     pn['month'] = pd.to_datetime(pn.t, unit='s').dt.strftime('%Y-%m')
