@@ -11,12 +11,13 @@ def main(sample=3000):
     R = R[(R.kind == "highest") & R.clean & R.icao.isin(list(TZ))]
     R = R[pd.to_datetime(R.date) >= "2026-05-01"]
     R = R.sample(min(sample, len(R)), random_state=0)
+    from common import load_bars
+    ALL = load_bars(R.event_id)
     rows = []
     for _, ev in R.iterrows():
-        fp = f"{D}/trade_bars/{ev.event_id}.parquet"
-        if not os.path.exists(fp):
+        b = ALL.get(int(ev.event_id))
+        if b is None:
             continue
-        b = pd.read_parquet(fp)
         d0 = local_ts(pd.Timestamp(ev.date).date(), 0, TZ[ev.icao]).timestamp()
         b["h"] = np.floor((b.bt - d0) / 3600)
         b["usd"] = b.vwap * b.shares

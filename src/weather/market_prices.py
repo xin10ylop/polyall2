@@ -71,13 +71,14 @@ def main():
     from common import TZ
     R = pd.read_parquet(f"{D}/events_resolved.parquet")
     R = R[(R.kind == "highest") & R.clean & R.icao.isin(list(TZ))]
+    from common import load_bars
+    ALL = load_bars()
     rows = []
     n = 0
     for _, ev in R.iterrows():
-        fp = f"{D}/trade_bars/{ev.event_id}.parquet"
-        if not os.path.exists(fp):
+        bars = ALL.get(int(ev.event_id))
+        if bars is None:
             continue
-        bars = pd.read_parquet(fp)
         tz = TZ[ev.icao]
         taus = []
         for dname, doff, hr in DECISIONS:

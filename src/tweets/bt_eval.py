@@ -8,13 +8,28 @@ OOS_START = pd.Timestamp("2026-06-01", tz="UTC").value // 10**9
 HB_EDGES = [0, 1, 3, 6, 12, 24, 48, 96, 1e9]
 HB_LAB = ["<1h", "1-3h", "3-6h", "6-12h", "12-24h", "24-48h", "48-96h", ">96h"]
 
-def load(extra_slip=0.0, min_spread=0.01):
+_imp = {}
+def since_import(t, acct):
+    """minutes since xtracker last imported a post (any X account; Trump/Tate: own feed) at time t."""
+    from common import posts, ACCTS
+    key = acct if acct in ("realDonaldTrump", "Cobratate") else "X"
+    if key not in _imp:
+        hs = [acct] if key != "X" else [h for h in ACCTS if h not in ("realDonaldTrump", "Cobratate")]
+        _imp[key] = np.sort(np.concatenate([posts(h).importedAt.values.astype("datetime64[s]").astype("int64") for h in hs]))
+    imp = _imp[key]; j = np.searchsorted(imp, t, side="right") - 1
+    return np.where(j >= 0, (t - imp[np.clip(j, 0, None)]) / 60, 1e9)
+
+def load(extra_slip=0.0, min_spread=0.01, mode="strict"):
     E, B = universe_bt()
-    fs = glob.glob(f"{D}/bt/*.parquet")
+    fs = glob.glob(f"{D}/bt{'' if mode == 'strict' else '_loose'}/*.parquet")
     df = pd.concat([pd.read_parquet(f) for f in fs], ignore_index=True)
     meta = E[["event_id", "acct", "series", "start", "end", "fee_rate", "gap", "title"]]
     df = df.merge(meta, on="event_id", how="inner")
     df["oos"] = df.t >= OOS_START
+    df["stall"] = 0.0
+    for a in df.acct.unique():
+        m = (df.acct == a).values
+        df.loc[m, "stall"] = np.asarray(since_import(df.t.values[m].astype("int64"), a), dtype="float64")
     df["hbin"] = pd.cut(df.H, HB_EDGES, labels=HB_LAB, right=False)
     hs_a = df.hs_a.fillna(0.02).clip(lower=0); hs_b = df.hs_b.fillna(0.02).clip(lower=0)
     df["ask"] = (df.mid + np.maximum(min_spread, hs_a) + extra_slip).clip(0.001, 0.999)

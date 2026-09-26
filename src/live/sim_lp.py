@@ -57,7 +57,8 @@ def load(tag):
     for k in trades: trades[k].sort()
     return snaps, cfg, trades
 
-def simulate(snaps, cfg, trades, N=None, d=0.015, fill_mode="at", min_rate=0.0, outcomes=None, max_inv=None, hmin=-1e9, hmax=1e9):
+def simulate(snaps, cfg, trades, N=None, d=0.015, fill_mode="at", min_rate=0.0, outcomes=None, max_inv=None, hmin=-1e9, hmax=1e9,
+             local0=None, lhmin=None, only_temp=False):
     res = collections.defaultdict(lambda: {"reward": 0.0, "samples": 0, "q_samples": 0, "fills": [], "share_sum": 0.0})
     last_ts = {}
     for si, snap in enumerate(snaps):
@@ -71,6 +72,11 @@ def simulate(snaps, cfg, trades, N=None, d=0.015, fill_mode="at", min_rate=0.0, 
                 continue
             hte = (_e - ts) / 3600
             if not (hmin <= hte < hmax): continue
+            if only_temp and "temperature" not in (m["q"] or "").lower(): continue
+            if local0 is not None:
+                l0 = local0.get(cid)
+                if l0 is None: continue
+                if (l0 - ts) / 3600 < lhmin: continue   # hours before station-local midnight of target day
             v = (m["v"] or 4.5) / 100.0; mn = m["min"] or 20
             n = N or mn
             bids = sorted(bk["b"], key=lambda x: -x[0]); asks = sorted(bk["a"], key=lambda x: x[0])

@@ -62,3 +62,14 @@ def round_half_up(x):
 def taker_fee_per_share(p, rate=0.05):
     p = np.asarray(p)
     return rate * p * (1 - p)
+
+
+def load_bars(event_ids=None):
+    """Consolidated 10-min YES-equivalent trade bars (see fetch_trades.py/consolidate_bars.py), decoded.
+    Returns dict event_id(int) -> DataFrame[bt, mi, kind, shares, pmin, pmax, n, nw, vwap]."""
+    X = pd.read_parquet(f"{D}/trade_bars_all.parquet")
+    if event_ids is not None:
+        X = X[X.event_id.isin([int(e) for e in event_ids])]
+    X = X.assign(bt=X.bt.astype("int64") * 600, vwap=X.vwap / 10000.0, pmin=X.pmin / 10000.0, pmax=X.pmax / 10000.0,
+                 shares=X.shares / 100.0)
+    return {k: v.drop(columns="event_id").sort_values("bt").reset_index(drop=True) for k, v in X.groupby("event_id")}

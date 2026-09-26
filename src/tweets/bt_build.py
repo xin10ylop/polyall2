@@ -16,9 +16,10 @@ from common import D, events, gaps
 from model import Acct, bucket_probs, hbin
 from calibrate import TRACK_START
 
-OUT = f"{D}/bt"; os.makedirs(OUT, exist_ok=True)
-WF = json.load(open(f"{D}/wf_params.json"))
-STRICT = True
+MODE = os.environ.get("BT_MODE", "strict")          # strict = xtracker as-of ; loose = own X monitor (createdAt)
+STRICT = MODE == "strict"
+OUT = f"{D}/bt" + ("" if STRICT else "_loose"); os.makedirs(OUT, exist_ok=True)
+WF = json.load(open(f"{D}/wf_params{'' if STRICT else '_loose'}.json"))
 
 def params_for(acct, t, H):
     m = pd.Timestamp(t, unit="s", tz="UTC").strftime("%Y-%m")
