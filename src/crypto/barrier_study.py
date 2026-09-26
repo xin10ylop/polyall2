@@ -73,6 +73,7 @@ def table(d):
                      'H1_n': int((g.half == 'H1').sum()), 'H1_ROI_real%': 100 * roi(g[g.half == 'H1'], 'real'),
                      'H2_n': int((g.half == 'H2').sum()), 'H2_ROI_real%': 100 * roi(g[g.half == 'H2'], 'real'),
                      'one_per_mkt_ROI_real%': 100 * roi(first, 'real'),
+                     'realonly_n': int(g.has_real.sum()), 'realonly_ROI%': 100 * roi(g[g.has_real], 'real'),
                      't_event': ev.mean() / ev.std() * np.sqrt(len(ev)) if len(ev) > 2 and ev.std() > 0 else np.nan})
     return pd.DataFrame(rows)
 
