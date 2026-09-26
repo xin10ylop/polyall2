@@ -15,7 +15,7 @@ CHUNK = 200
 def price_history(tok, t_start, t_end, fine_fid=1, fine_hours=26):
     out = []
     # coarse whole life (API caps window length for fine fidelity -> chunk by 7 days)
-    a = int(t_start) - 3600
+    a = int(t_start) - 3600 if not FINE.get('only_fine') else int(t_end) + 1
     while a < t_end:
         b = min(a + 7 * 86400, int(t_end) + 3600)
         r = get_json(f'{CLOB}/prices-history', params={'market': tok, 'startTs': a, 'endTs': b, 'fidelity': 15})
@@ -71,8 +71,9 @@ def main():
     ap.add_argument('--workers', type=int, default=8)
     ap.add_argument('--fine-fid', type=int, default=1)
     ap.add_argument('--fine-hours', type=float, default=26)
+    ap.add_argument('--only-fine', action='store_true', help='skip the coarse whole-life history')
     a = ap.parse_args()
-    FINE['fid'] = a.fine_fid; FINE['hours'] = a.fine_hours
+    FINE['fid'] = a.fine_fid; FINE['hours'] = a.fine_hours; FINE['only_fine'] = a.only_fine
     df = pd.read_parquet(DATA / f'markets_{a.series}.parquet')
     df = df[df.kind.isin(a.kinds.split(',')) & df.closed & df.res_yes.notna()]
     df = df[df.event_end >= pd.Timestamp(a.since, tz='UTC')]

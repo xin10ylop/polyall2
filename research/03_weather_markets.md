@@ -100,3 +100,110 @@ The rare misses are 1-degree boundary cases (late corrections, 5-min data, or th
   METARs (published every 30–60 min) hours before resolution;
 * model training can use METAR daily max as the target with negligible label noise.
 
+Station-level exceptions matter for any observation-based strategy (`resolution_check.parquet`, walk-forward station
+filter in `dead_sim.py`): Shenzhen ZGSZ in the WU era matched only 24 % (the WU page evidently used a different
+sensor/station), Seoul RKSI 88.5 % (WU), Moscow UUWW 94 % (NOAA era, resolution 1 °C above METAR in 11 cases),
+Taipei RCTP 50 % (short period), Panama MPMG 91 % (NOAA era). Everywhere else ≥ 97–100 %.
+
+## 3. Liquidity, volume timing and live order books
+
+* ~51 "highest temperature" events per day (Aug–Sep 2026), gamma volume ≈ **$2.6M/day** across all cities
+  (≈ $1.5M/day taker notional; data-api taker notional ≈ 0.6 x gamma `volume`). Median event: $30–220k gamma volume.
+* Timing of trading (share of YES-equivalent notional by hour relative to local midnight of the target day, 3,000
+  events since May 2026): D-2/D-1 before noon 5 %, D-1 afternoon/evening 18 %, D0 00–11 h 16 %,
+  **D0 11–18 h 45 %**, D0 18–24 h 14 %, after midnight 2 %. The bulk of the money trades on the target day while the
+  temperature is being observed.
+* Live books (snapshot 2026-09-26 14:11 and 18:02 UTC, 3,100–3,200 open buckets, `live_books/`): for tomorrow /
+  the day after, the typical bucket in the 20–50 % range is quoted **2 c wide** with ~$80–110 within 1 c of the best
+  ask and $170–260 within 3 c; a $200 market buy moves the average fill by ~2–4 c. Buckets < 5 % have $4–10 at the
+  best ask (a $200 sweep would pay 10–14 c for a 1–3 c contract). On the target day (D0) spreads widen to 3–9 c and
+  depth collapses to ~$5–25 within 3 c for live buckets; buckets that are effectively decided (YES > 95 % or NO > 99 %)
+  hold $500–800 at 0.99–0.999. Sum of best asks over an event: 1.11 (median) one day ahead, 1.41 two days ahead,
+  i.e. buying the whole ladder costs 11–41 % over par; sum of best bids 0.97 / 0.91.
+* Practical consequence: realistic clip sizes are **$20–200 per bucket per decision**, and a strategy that needs to
+  cross the spread pays 1–2 c (D-1) to 2–5 c (D0) plus the taker fee.
+
+## 4. Same-day observation strategy ("dead buckets")
+
+### 4.1 Mechanism and what the flagged wallets do
+
+Once a METAR reports a temperature T at the resolution station, every bucket whose upper bound is < T is dead
+(NO wins with certainty up to the ~0.2–0.4 % METAR/resolution mismatch rate), and the top tail ("X or higher") is
+decided YES once T ≥ X. `wallet_analysis.py` joins the fills of the four wallets flagged by leaderboard forensics
+(data-api `/trades?user=`; the API returns only the latest 10,000 fills per wallet, i.e. May–Sep 2026) with the
+METAR state at fill time (`wallet_fills.parquet`). Maker/taker is identified by matching the fill against the
+event's taker-only prints.
+
+| Wallet | fills (period) | buys on buckets already dead per METAR | median seconds after the killing METAR's obs time (taker buys) | typical price | taker share |
+|---|---|---|---|---|---|
+| Weatherstappen | 10,358 (May 13 – Sep 26) | 75 % of buys, 92 % of buy $ | **70 s** (q10 38 s, q90 166 s) | NO 0.985–0.99, exits at 0.999 | 25 % of dead buys (rest are resting NO bids at 0.99 that get hit) |
+| bhuumi | 10,327 (May 8 – Sep 25) | 73 % of buys (74 % of $) | 222 s (q10 58 s) | NO 0.99 | 50 % |
+| FuuUuUu | 761 (Apr 26 – Sep 26) | 18 % of buys (30 % of $) | 154 s | NO 0.98–0.99 | 39 % |
+| wuxiuming | 10,061 (Jun 16 – Sep 23) | 11 % (37 % of $) | 55 s | NO 0.98–0.99 | 34 % |
+
+So the core business of two of them is exactly the deterministic dead-bucket trade, executed **~40–200 s after the
+observation time**, both by taking and by resting 0.99 NO bids. Their "alive" trades are different:
+FuuUuUu and Weatherstappen mostly buy YES on the bucket that currently contains the running max (gap 0) at
+0.70–0.87 (hold-to-resolution PnL +11–15 % per $ on those), wuxiuming buys YES longshots one degree above the running
+max at ~0.14 (win 36 %, +9 % per $). bhuumi's non-dead trades are ~break-even.
+
+### 4.2 Backtest with exact prints (all "highest" events May 1 – Sep 25 2026)
+
+Setup (`deadbucket.py`, `dead_latency.py`, `dead_sim.py`): 7,407 events with METARs; 40,228 strict dead-bucket
+events (bucket upper bound < running max; 0.14 % of them nevertheless resolved YES), 34,151 with a 1-degree margin
+(0.04 % resolved YES), 378 top-tail hits (98.9 % resolved YES). Taker prints (exact second, 2.3M on the relevant
+buckets) are expressed relative to the **observation time `valid` of the METAR that killed the bucket**. A NO fill
+is any taker purchase of NO or taker sale of YES (NO price = 1 − YES price). The simulation enters at
+`valid + delay` and takes, within the next 10 minutes, every print at or below a limit price, capped at **50 % of
+the printed shares** (we compete with whoever printed), pays the 5 % × p(1−p) taker fee, holds to resolution.
+
+Executable NO prints on strict dead buckets, by seconds after the killing METAR's observation time:
+
+| window after obs time | deaths with any NO print | deaths with a NO print ≤ 0.99 | median NO print | edge $ available (≤ 0.99) |
+|---|---|---|---|---|
+| −10 … −2 min | 25 % | 18 % | 0.950 | $140k |
+| −60 … 0 s | 13 % | 9.5 % | 0.970 | $54k |
+| 0 – 15 s | 8.1 % | 5.2 % | 0.987 | $28k |
+| 15 – 60 s (sum of three 15-s bins) | 28 % | 15 % | 0.990 | $102k |
+| 60 – 90 s | 19 % | 8.4 % | 0.997 | $89k |
+| 90 – 120 s | 11 % | 3.6 % | 0.998 | $28k |
+| 2 – 5 min (sum of bins) | 45 % | 9.2 % | 0.999 | $105k |
+| 5 – 10 min | 29 % | 2.5 % | 0.999 | $24k |
+| 10 – 60 min (sum of bins) | 33 % | 3.3 % | 0.999 | $62k |
+
+(US ASOS stations reach a median NO print of 0.999 after ~2 min; non-US stations after ~90 s.)
+**The market reprices dead buckets within 1–2 minutes of the observation time; after ~2 minutes cheap NO liquidity
+is rare and what remains is disproportionately the station-mismatch cases.**
+
+Relative to the METAR **receipt time at aviationweather.gov** (AWC `receiptTime`, available for the last 15 days
+only: 2,832 deaths, receipt delay median 274 s after obs time, q10 85 s): the median NO print is already 0.998 at
+receipt; only 1.4 % of deaths have any print ≤ 0.99 in the first 10 s after AWC receipt ($449 of edge in 15 days),
+0.5 % per 10-s bin thereafter. **A bot fed by the public AWC/NWS feed is too late; the winners have feeds that are
+~1–4 minutes faster (1-/5-minute ASOS, national met-service feeds, direct METAR distribution).**
+
+Strategy PnL (limit 0.98, 10-minute window, 50 % of prints, fees included; "reliable" = station's walk-forward
+METAR-vs-resolution match rate ≥ 99 % in prior months):
+
+| delay after obs time | stations | trades | staked | PnL | ROI | losing trades | worst trade | $/day staked | PnL/day | % days positive |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0 s | all | 6,905 | $1.77M | $147k | 8.3 % | 48 | −$3,034 | $12.0k | $996 | 99 % |
+| 60 s | all | 4,456 | $1.13M | $92k | 8.1 % | 48 | −$2,521 | $7.7k | $623 | 97 % |
+| 60 s | reliable | 3,389 | $0.87M | $80k | 9.2 % | 6 | −$1,193 | $5.9k | $541 | 99 % |
+| 120 s | reliable | 1,604 | $0.40M | $37k | 9.2 % | 5 | −$1,190 | $2.7k | $249 | 99 % |
+| 300 s | reliable | 281 | $68k | $5.7k | 8.4 % | 2 | −$245 | $456 | $38 | 99 % |
+| 300 s | all | 625 | $128k | $3.8k | 3.0 % | 43 | −$808 | $862 | $26 | 81 % |
+| 600 s | all | 359 | $55k | −$1.7k | −3.0 % | 43 | −$1,512 | $374 | −$11 | 78 % |
+| 30 min | all | 185 | $22k | −$4.0k | −18 % | 39 | −$2,906 | $147 | −$27 | 70 % |
+
+Same with a 1-degree safety margin (bucket upper bound ≤ running max − 2): at 60 s, reliable stations: 355 trades,
+$75k staked, +$5.3k (7.0 %), 2 losers; top-tail YES at 60 s, reliable: 83 trades, $29k, +$4.4k (15 %), 0 losers.
+By month (60 s, reliable): ROI 10.6 % (May), 9.7 %, 8.6 %, 9.4 %, 6.7 % (Sep) — decaying as competition grows.
+Average fill 0.96 (q10 0.87); these fills are mostly buckets that died "unexpectedly" (the prior YES price was
+still meaningful), i.e. the liquidity exists precisely when the market was surprised.
+
+Caveats / assumptions: (1) 50 % of printed shares assumes we win half the race against the fastest takers; the
+wallets above show the race is run in tens of seconds, so a 0–60 s delay is only achievable with a sub-minute data
+feed; (2) station mismatch risk is fat-tailed (a single bad day at Seoul/Shenzhen cost more than a week of gains
+before the filter); (3) the resolution source switched from WU to NOAA on 2026-08-23, which changed several
+stations' mismatch behaviour; (4) the 0.14 % "dead but resolved YES" cases are real losses (included).
+

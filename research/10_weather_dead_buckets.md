@@ -26,3 +26,16 @@ Observations:
 * Economics are lumpy: most profit comes from 1–3 events per quarter in this 2.5% sample; scaling ×40 to the full
   universe suggests ~5 qualifying buckets/day, but capture share vs. the takers who actually traded is unknown.
 Next: full-universe replication (weather agent) + live monitor (`src/nowcast/live_nowcast.py`, running).
+
+## Full-universe replication (weather agent, research/03 §4) — verdict: a data-latency race
+* 40,228 strict dead-bucket events (May–Sep 2026, all "highest" markets), exact-second taker prints.
+* Cheap NO liquidity (≤0.99) exists mostly in the first 15–90 s after the killing METAR's **observation** time;
+  median NO print is 0.997 at 60–90 s and 0.999 after 2 min.
+* The public aviationweather.gov feed delivers the METAR a median **274 s** after observation time — by then the
+  median NO print is 0.998 and only ~$449 of edge appeared in 15 days in the first 10 s after receipt.
+* Simulated P&L (limit 0.98, 50% of prints, fee incl., reliable stations): delay 60 s → +$541/day (9.2% ROI);
+  120 s → +$249/day; 300 s → +$38/day; 600 s → −$11/day; 30 min → −$27/day. Decaying month by month (10.6% → 6.7%).
+* The profitable wallets (Weatherstappen, bhuumi) trade 40–200 s after observation time, i.e. they have feeds
+  1–4 minutes faster than the public AWC feed.
+=> Profitable only with a sub-minute observation feed; with public feeds it is break-even to negative. This is a
+   speed race (excluded by the brief) → **not adopted**. My own 2-min live monitor saw zero sub-0.999 dead buckets.

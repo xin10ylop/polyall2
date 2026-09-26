@@ -16,6 +16,7 @@ SERIES = {
     10151: 'bitcoin-hit-price-weekly', 10152: 'ethereum-hit-price-weekly',
     10170: 'solana-hit-price-weekly', 10239: 'xrp-hit-price-weekly',
     10200: 'bitcoin-hit-price-daily', 11297: 'ethereum-hit-price-daily',
+    11298: 'solana-hit-price-daily', 11299: 'xrp-hit-price-daily',
     # family c: range buckets (neg risk)
     10041: 'bitcoin-neg-risk-weekly', 10065: 'ethereum-neg-risk-weekly',
     10107: 'solana-neg-risk-weekly', 10247: 'xrp-neg-risk-weekly',
