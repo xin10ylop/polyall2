@@ -186,7 +186,7 @@ METAR-vs-resolution match rate ≥ 99 % in prior months):
 
 | delay after obs time | stations | trades | staked | PnL | ROI | losing trades | worst trade | $/day staked | PnL/day | % days positive |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 0 s | all | 6,905 | $1.77M | $147k | 8.3 % | 48 | −$3,034 | $12.0k | $996 | 99 % |
+| 0 s | all | 6,905 | $1.77M | $147k | 8.3 % | 48 | −$3,034 | $12.0k | $996 | 98.6 % |
 | 60 s | all | 4,456 | $1.13M | $92k | 8.1 % | 48 | −$2,521 | $7.7k | $623 | 97 % |
 | 60 s | reliable | 3,389 | $0.87M | $80k | 9.2 % | 6 | −$1,193 | $5.9k | $541 | 99 % |
 | 120 s | reliable | 1,604 | $0.40M | $37k | 9.2 % | 5 | −$1,190 | $2.7k | $249 | 99 % |
@@ -206,4 +206,96 @@ wallets above show the race is run in tens of seconds, so a 0–60 s delay is on
 feed; (2) station mismatch risk is fat-tailed (a single bad day at Seoul/Shenzhen cost more than a week of gains
 before the filter); (3) the resolution source switched from WU to NOAA on 2026-08-23, which changed several
 stations' mismatch behaviour; (4) the 0.14 % "dead but resolved YES" cases are real losses (included).
+
+### 4.3 Is it a race won in seconds, or do prices lag 10–60 minutes?
+
+It is a race won in **tens of seconds to ~2 minutes after the observation time**, i.e. before the public
+aviationweather.gov feed even shows the METAR (median receipt 274 s after obs time). Evidence: (i) the median
+executable NO print on a strict dead bucket is 0.987 in the first 15 s, 0.997 at 60–90 s and 0.999 from 2 min on;
+(ii) the professional wallets take at a median 55–70 s (Weatherstappen, wuxiuming) and post resting 0.99 NO bids;
+(iii) relative to AWC receipt, only 1.4 % of deaths still offer any NO ≤ 0.99 in the first 10 s. Prices do *not*
+lag 10–60 minutes in general: after 5 minutes, only ~2 % of deaths still show a NO print ≤ 0.99 per 5-minute bin,
+and buying those loses money (−3 % to −18 % ROI at 10–30 min delay) because they are dominated by cases where the
+METAR disagrees with the resolution source (the market knows the station quirks). With a 1-degree margin
+(no mismatch exposure) the late residual is profitable but tiny (tens of $ per day).
+
+**Capacity** of the deterministic trade across all ~51 cities: with a sub-minute feed ≈ $6–9k/day deployed at an
+average fill of ~0.96 → ~$550–850/day theoretical (50 %-of-prints assumption); the realised scale of the leading
+wallet is $4.0k/day at 4.1 % hold-to-resolution PnL/$ ≈ **$170/day**; bhuumi $3.9k/day at 2.6 % ≈ $100/day.
+With a 2–5 minute feed (public API polling) the opportunity shrinks to ≈ $0.5–0.9k/day staked and **$25–40/day**.
+ROI per trade decays month by month (10.6 % → 6.7 % May → Sep). Capital turns over daily (positions can be exited
+at 0.998–0.999 within minutes, as the wallets do), so capital needs ≈ one day's stake.
+
+## 5. Forecast model (pre-peak): D-1 12:00 and D0 07:00 local
+
+Model (`wf_model.prepeak`, `prepeak_eval.py`): sources available at the decision time only — ECMWF IFS HRES
+daily max of `mx2t3` at the station (latest run with run+8 h ≤ τ, bilinear from 0.25°), NBM TXN for US stations
+(latest NBS run with run+2 h ≤ τ), Open-Meteo previous-day runs for NYC; each bias-corrected with the station's
+rolling 60-day mean error (strictly before the day, 1–2 day gap), averaged; Student-t(5) error with rolling
+per-station scale. Bucket probability = t-mass on the integer interval (±0.5). Walk-forward throughout; stacked
+version = monthly expanding logistic regression of the outcome on logit(market last price) and logit(model),
+fit only on earlier months.
+
+Point skill (Mar 15 – Sep 25): MAE 1.16 °C / 1.97 °F at D-1 12:00; 1.03 °C / 1.72 °F at D0 07:00 (NBM alone at
+KLGA: 2.1 °F). Probabilistic skill vs the market (bucket-level log loss, lower is better; 9,000+ events):
+
+| decision | market last price | model | market recalibrated | market + model stacked |
+|---|---|---|---|---|
+| D-1 12:00 | **0.2197** | 0.2519 | 0.2198 | 0.2203 |
+| D0 07:00 | **0.2240** | 0.2673 | 0.2243 | 0.2245 |
+
+Event-level multinomial log loss for the 9 US cities with NBM (2,475 events): market 1.26 vs model 1.48 (D-1),
+1.13 vs 1.40 (D0 07h). **The market is materially sharper than a bias-corrected ECMWF/NBM model, and adding the
+model to the market does not improve out-of-sample log loss.** Month by month, the stacked model beat the market
+only in Dec 2025 – Mar 2026 (fewer cities, thinner books); from April 2026 (launch of ~40 new cities) onward the
+market is at least as good in every month.
+
+Backtest (buy YES or NO when edge vs estimated ask > threshold; fills at the VWAP of actual taker prints on that
+side within 30 min after the decision, ≤ 50 % of printed size, fee included; one entry per bucket/side):
+
+| strategy | stake cap | trades | hit | avg price | staked | PnL | ROI | max DD | t |
+|---|---|---|---|---|---|---|---|---|---|
+| raw model, thr 5 c (Dec–Sep) | $20 | 18,715 | 46.6 % | 0.473 | $134k | −$3.0k | −2.3 % | $3.7k | −2.0 |
+| raw model, thr 5 c, Jul–Sep holdout | $20 | 8,371 | 46.4 % | 0.473 | $64k | −$1.8k | −2.8 % | $2.6k | −1.6 |
+| raw model, $5 / $100 caps (all) | | 18,715 | | | $61k / $222k | −$1.9k / −$5.4k | −3.0 % / −2.4 % | | |
+| stacked, thr 2 c (all walk-fwd) | $20 | 2,708 | 57.6 % | 0.562 | $21.5k | +$0.71k | +3.3 % | $0.4k | 1.4 |
+| stacked, thr 2 c, Jul–Sep holdout | $20 | 88 | 70 % | 0.650 | $1.0k | +$29 | +2.9 % | $0.1k | 0.3 |
+| stacked, $5 / $100 caps (all) | | 2,708 | | | $9.7k / $34k | +$0.15k / +$2.0k | +1.6 % / +5.8 % | | 0.7 / 1.7 |
+
+The raw model "sees" 10–20 c of edge on thousands of buckets and loses 2–4 % net — every disagreement with the
+market is resolved in the market's favour. The stacked version trades rarely, its profit (t ≈ 1.4) comes from
+Dec–Mar, and in the Jul–Sep holdout it essentially stops trading because the fitted weight on the model goes to ~0.
+**No robust pre-peak forecast edge exists with public global-model data.**
+
+## 6. Intraday probabilistic ("near-dead") model: forecasts + running max + current temperature + hour
+
+Model (`wf_model.intraday_exceed`, `near_dead.py`): for decision hours 10:00–19:00 local, the excess
+E = (final max − running max) is modelled with an ordinal logit whose inputs are: ECMWF remaining-day max minus
+running max (bias-corrected with the station's 30-day ECMWF error), current temperature minus running max, today's
+ECMWF error so far (running max − forecast max so far), NBM remaining max for US stations; one model per hour and
+unit, refit monthly on all earlier months (walk-forward). Bucket probabilities follow from the running max floor.
+This is exactly the lead's "forecast-conditioned near-dead" model (e.g. Austin 10:00, running max 82 °F,
+bucket 98–99 °F: the model uses the ECMWF/NBM remaining-day max, not climatology).
+
+Bucket-level log loss (8,200–8,400 events per hour, Mar–Sep, walk-forward):
+
+| hour | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| market | 0.2315 | 0.2226 | 0.2108 | 0.1893 | 0.1582 | 0.1195 | 0.0764 | 0.0391 | 0.0168 | 0.0081 |
+| model | 0.2848 | 0.2741 | 0.2581 | 0.2384 | 0.2181 | 0.1780 | 0.1295 | 0.0891 | 0.0548 | 0.0410 |
+| stacked | 0.2317 | 0.2228 | 0.2108 | 0.1893 | 0.1580 | 0.1193 | 0.0758 | 0.0384 | 0.0162 | 0.0081 |
+
+The only improvement over the market after 15:00 comes from recalibrating the market price itself (a mild
+favourite–longshot bias: YES priced 7–15 c at 16–18 h wins 5–8 %); the weather model adds nothing on top.
+
+Trading the near-dead NO (NO executable price 0.80–0.99, model edge > threshold, fills at actual NO prints within
+30 min, fee included): raw model thr 2 c: 5,885 trades, $93k staked, −$0.8k (−0.9 %); Jul–Sep holdout −0.2 %;
+stacked model thr 2 c: 577 trades, −7 % to −10 %. A pure market-bias rule (buy NO when the YES last price is
+0.03–0.15 at 14–18 h) loses 0.4–2 % after the fee, because the actual NO prints already sit at the calibrated level
+(e.g. 17 h, YES last 0.07–0.15: YES frequency 7.9 %, NO filled at 0.920, ROI −2.1 %).
+**The probabilistic near-dead edge is not capturable as a taker with public forecasts + METARs at hourly decision
+frequency.** The flagged wallets' profitable "alive" trades (YES on the bucket containing the running max at
+0.70–0.87, +11–15 % per $) are consistent with an information/latency advantage (faster sub-hourly observations,
+e.g. 1-/5-minute ASOS or national met-service feeds that reveal the day's peak before the next METAR), not with
+a better forecast model; we cannot reproduce them with hourly METARs.
 
