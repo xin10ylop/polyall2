@@ -46,3 +46,11 @@ in every YES bucket from 0.02 to 0.7. Rejected (classic decay/overfit).
   does not improve OOS log-loss (0.4527 → 0.4531).
 => Jev's value must come from judging *evidence the market has not priced yet* (data feeds, transcripts, rules),
    i.e. as a verifier/classifier inside a model pipeline, not as an oracle.
+
+## Finding 6 — Structural arbitrages checked live (2026-09-26 ~18:00 UTC): none executable
+* **Neg-risk rebalancing** across all 7,359 open neg-risk events: every "Σ asks < 1" hit is a `negRiskAugmented`
+  event (outcome list incomplete → not an arbitrage). The one clean exhaustive, fee-free case (Maduro prison-time
+  buckets, Σ asks 0.948) pays 5.5% over ~15 months (≈4%/yr) with 25-share depth — worse than holding rewards.
+* **Cross-family replication** (BTC "above K on date" vs Σ "BTC price on date" range buckets ≥ K, identical
+  resolution candle): for Sep 27–30 every strike shows negative gaps in both directions (−0.2 to −29 ¢) once
+  bid/ask are used; best case +0.2 ¢ before fees. Market makers keep the families consistent.

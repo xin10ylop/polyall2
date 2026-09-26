@@ -41,6 +41,12 @@ def main():
                 x = by_run.get(run)
                 if x is None:
                     continue
+                # fill the part of the day before this run's first window from the previous run
+                if k >= 1:
+                    prv = pd.Timestamp(runs[k - 1]).tz_localize("UTC")
+                    xp = by_run.get(prv)
+                    if xp is not None:
+                        x = pd.concat([xp[xp.vend <= run], x], ignore_index=True)
                 inday = x[(x.vmid >= day0) & (x.vmid < day1)]
                 if len(inday) < 7:   # need (almost) full day coverage
                     continue

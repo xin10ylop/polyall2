@@ -24,7 +24,7 @@ def scores(B, qcol="q", pcol="p_mkt"):
 
 
 def simulate(B, thr=0.05, fill="prints", stake=20.0, frac=0.5, extra_slip=0.0, pmin=0.02, pmax=0.98,
-             max_age_h=3.0, sides=("yes", "no"), fee_rate=0.05):
+             max_age_h=3.0, sides=("yes", "no"), fee_rate=0.05, qcol="q", once=True):
     """Return one row per executed trade.
     Signal (uses only info <= tau): est ask = last_px + half-spread(dec); est bid = last_px - half-spread.
       YES if q - ask_est - fee(ask_est) > thr ; NO if (1-q) - (1-bid_est) - fee(1-bid_est) > thr.
@@ -33,7 +33,8 @@ def simulate(B, thr=0.05, fill="prints", stake=20.0, frac=0.5, extra_slip=0.0, p
                 size <= frac * lifted shares; NO fills at 1 - hit VWAP likewise.
       'quote' : fill at ask_est/bid_est (+extra_slip), unlimited size.
     """
-    X = B[B.last_px.notna() & (B.last_age_h <= max_age_h)].copy()
+    X = B[B.last_px.notna() & (B.last_age_h <= max_age_h) & B[qcol].notna()].copy()
+    X["q"] = X[qcol]
     hs = X.dec.map(HALF_SPREAD)
     X["ask_est"] = (X.last_px + hs).clip(upper=0.999)
     X["bid_est"] = (X.last_px - hs).clip(lower=0.001)
@@ -70,6 +71,8 @@ def simulate(B, thr=0.05, fill="prints", stake=20.0, frac=0.5, extra_slip=0.0, p
     T["cost"] = T.shares * (T.px + T.fee_sh)
     T["pnl"] = T.shares * (T.payoff - T.px - T.fee_sh)
     T["edge_fill"] = T.q_side - T.px - T.fee_sh
+    if once:  # first trigger per (event, bucket, side) only
+        T = T.sort_values("dec_order" if "dec_order" in T else "dec").drop_duplicates(["event_id", "mi", "side"], keep="first")
     return T
 
 

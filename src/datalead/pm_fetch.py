@@ -30,7 +30,7 @@ def price_history(cid, tok, t0, t1, fid=10):
     if os.path.exists(fn):
         return json.load(open(fn))
     T, P = [], []
-    s = int(t0)
+    s, t1 = int(t0), int(t1)
     while s < t1:
         e = int(min(t1, s + 14 * 86400))
         d = _get("https://clob.polymarket.com/prices-history", {"market": tok, "startTs": s, "endTs": e, "fidelity": fid})

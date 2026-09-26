@@ -3,7 +3,9 @@ Validated on 300 weather markets (true vs deliberately wrong station): AUC 1.0, 
 import os, sys, json, time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from common.jev import decide
-CACHE = os.path.join(os.environ.get("BOT_STATE", os.path.join(os.path.dirname(__file__), "..", "bot_state")), "guard_cache.json")
+_STATE = os.environ.get("BOT_STATE", os.path.join(os.path.dirname(__file__), "..", "bot_state"))
+os.makedirs(_STATE, exist_ok=True)
+CACHE = os.path.join(_STATE, "guard_cache.json")
 _cache = json.load(open(CACHE)) if os.path.exists(CACHE) else {}
 THRESH = float(os.environ.get("GUARD_THRESHOLD", 0.8))
 

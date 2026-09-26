@@ -65,12 +65,16 @@ def bom_week(year, week):
 
 def parse_bracket(q):
     q = q.replace("–", "-").replace("—", "-")
+    q = re.sub(r'"[^"]*"|\'[^\']*\'|“[^”]*”', "", q)          # drop the quoted film name
+    q = re.sub(r"\b\d-day\b", "", q)                            # '3-day opening weekend'
     ql = q.lower()
-    nums = [float(x) for x in re.findall(r"\$?(\d+(?:\.\d+)?)\s*[mM]?(?=[^a-z0-9]|$)", re.sub(r'"[^"]*"|\'[^\']*\'', "", q))]
+    nums = [float(x) for x in re.findall(r"\$?(\d+(?:\.\d+)?)\s*[mM]?(?=[^a-z0-9]|$)", q)]
     nums = [n for n in nums if n < 2000]
-    if re.search(r"less than|under|below|<", ql) and nums:
+    if (re.search(r"\bbetween\b|but less than", ql) or re.search(r"\d\s*m?\s*-\s*\$?\d", ql)) and len(nums) >= 2:
+        return (nums[-2], nums[-1])
+    if re.search(r"\bless than\b|\bunder\b|\bbelow\b|<", ql) and nums:
         return (0.0, nums[-1])
-    if re.search(r"greater than|more than|at least|or more|over|above|\+", ql) and len(nums) >= 1 and not re.search(r"between|but less", ql):
+    if re.search(r"greater than|more than|at least|or more|\bover\b|\babove\b|\+", ql) and nums:
         return (nums[-1], 1e9)
     if len(nums) >= 2:
         return (nums[-2], nums[-1])

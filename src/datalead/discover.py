@@ -16,6 +16,9 @@ FAM = {
     "boxoffice": dict(queries=["opening weekend box office", "2nd weekend box office", "weekend box office",
                                "3rd weekend box office", "box office"],
                       pat=r"weekend-box-office"),
+    "billboard": dict(queries=["Billboard 200 #1 Album Week of", "Billboard Hot 100 #1 Song Week of", "billboard #1 song week of",
+                               "billboard 200 number 1", "hot 100 #1", "#1 album week of", "#1 song week of"],
+                      pat=r"billboard"),
     "aimodel": dict(queries=["best ai model on", "best ai model end of", "which company has best ai model",
                              "top ai model"], pat=r"best-ai-model|ai-model"),
 }

@@ -16,6 +16,23 @@ one third lose money. LP farming is real and some small wallets make money. As a
 roughly zero-to-thin EV with fat left tails. The 30× gap between the simulator and reality is explained below. Section 4
 describes a "safe version": a gated live experiment, not a scaled deployment.
 
+**Update after the lead's follow-up evidence (section 5).**
+- **`market_competitiveness` is on a different scale from Σ Q_min.** It is *not* a usable reward-share denominator. It sits
+  below a hard lower bound on Σ Q_min in 96 % of testable markets (median 8 % of that bound). Using it inflates a 20-share
+  quote's share from ~14 % to ~78 %.
+- **The tradetosurvive1 and PPMT monthly reward figures are confirmed.** Both wallets keep only ~45–55 % (0x30fb41b5) and
+  ~85 % (PPMT, but it has $30k of capital: 0.4 %/day) of rewards after trading P&L.
+- **The local-time AS table is directionally right but ~1.2–2× too pessimistic in magnitude.** The cause is a fill-size
+  bug. More importantly, it measures only *historical* flow.
+- **Decisive new test.** LP wallets whose maker fills in *closed* temperature events are mostly (> 80 %) *before* the
+  local observation day hand back **~90 % of rewards** (pooled 0.90, median 0.91), no better than undisciplined ones.
+- **Final calibrated estimate** for a disciplined small LP that stops at local midnight before D:
+  - gross rewards ≈ 4–5 %/day of capital;
+  - net ≈ **+0.25 to +0.4 %/day median** (IQR ≈ −0.8 % to +0.9–2 %/day);
+  - ~40 % chance a given month is negative;
+  - upward-biased by survivorship.
+  - On $1,000 that is ≈ **+$3/day median**, not $1,000/day.
+
 ---
 
 ## 1. Bugs and optimism biases in the simulators
@@ -147,7 +164,10 @@ reward per market they are filled in is **$1–3/market-day**, versus the sim's 
   - Selection on being filled understates it.
   - Rewards are wallet-wide across all categories.
   - Capital is a single snapshot.
-- A careful operator who never quotes the observation day and centres quotes on a forecast could beat the median. The historical sim says pre-observation AS is 3–10× smaller than on the observation day. That is still unproven.
+- ~~A careful operator who never quotes the observation day could beat the median.~~ Tested in section 5.4: wallets
+  whose weather maker fills are > 80 % pre-observation-day hand back ~90 % of rewards, the same as everyone else.
+  "Discipline" in timing alone does not separate winners from losers. Only a forecast-informed quote centre remains an
+  untested source of edge.
 
 ---
 
@@ -192,6 +212,7 @@ reward per market they are filled in is **$1–3/market-day**, versus the sim's 
 **Verdict.**
 - LP-reward farming is a *real* income stream: 243 identifiable wallets, many with < $1.5k, collect rewards daily.
 - For an **uninformed, passive** small maker it is **not reliably positive-EV**. The best estimate is a thin positive median (≈ +0.4 %/day) with a heavy left tail, and one third of comparable wallets lose money over 30 days.
+- Stopping at local midnight before the observation day does **not** change this in the wallet data (section 5.4): ~90 % of rewards are still handed back, and the net is ≈ +0.25 %/day median for < $1.5k.
 - The simulator's ~$1,000/day on ~$700 is **~25× too high on gross** and **~300× too high on median net**. It is not "executable, same live as in test": it assumes being the only quote inside 21¢-wide books with no adverse selection.
 - **Not executable from a US/IL location at all.**
 - For $100: not worth it except as a measurement exercise. For $1,000: only as a gated experiment.
@@ -212,9 +233,129 @@ reward per market they are filled in is **$1–3/market-day**, versus the sim's 
    - Add a P&L leg to the reward sim (fills priced to resolution, as in `hist_as_audit.py`).
    - Report reward per **market-day** and per **filled share** so it is directly comparable to the wallet ground truth ($1–3/market-day, +3.3¢ reward vs −2.7¢ AS per filled share).
 
+---
+
+## 5. Verification of the lead's follow-up evidence, and the final calibrated estimate
+
+### 5.1 `market_competitiveness` is NOT Σ Q_min, so do not use it as the share denominator
+
+Test: `src/audit/competitiveness_check.py`, 687 two-sided rewarded weather markets, `market_competitiveness` and
+`/books` fetched back-to-back, repeated 120 s apart.
+- **It is computed from the live book.** It changed in 62 % of markets within 120 s, the same rate as the book score. Its
+  rank correlation with my aggregate book Q_min is **0.68 (Spearman), 0.70 (log-Pearson)**. The lead's 0.93 is probably
+  a raw-value Pearson driven by a few huge markets. So it is useful for **ranking** markets by competition.
+- **It is on a different scale.** Median comp/Q_min = **0.039** (IQR 0.021–0.097). The ratio is price-dependent: 0.022 at
+  mid 0.3–0.7, 0.16 at mid < 0.1, 0.33 at mid > 0.9. Neither a per-order min-size filter nor a raw vs adjusted mid
+  explains it (all variants 0.013–0.11).
+- **Hard lower-bound test.**
+  - For mid ∈ [0.1, 0.9] each maker's Q_min ≥ max(Q_one, Q_two)/3. So Σ Q_min ≥ (score of any single order)/3.
+  - Take the largest price level of ≥ 10× `rewardsMinSize` shares within v (an order that big is very unlikely to be all
+    sub-minimum orders).
+  - `market_competitiveness` is **below that bound in 96 % of 239 markets**, with a median of **8 %** of the bound.
+  - Therefore it cannot be the Σ Q_min the reward engine divides by. It is some normalised or rescaled score.
+- **Consequence.** A 20-share quote 1¢ from mid in a $10–20/day pool gets a median share of **0.78** with `comp` as the
+  denominator (reproducing the lead's 80–90 %). The same quote gets **0.14** with the book's aggregate Q_min and **0.10**
+  with sim_lp's conservative max(q1, q2). The 80–90 % figure is an artefact of the scale mismatch.
+- **Cross-check against reality.** Real small farmers earn **$1–3 per filled market-day** (section 2). An 80 % share of
+  $10–20 pools would be $8–16 per market-day for every min-size quoter, which is inconsistent with observed payouts.
+
+### 5.2 Monthly reward totals: confirmed, and they show strong growth
+
+| Wallet | Metric | Jun | Jul | Aug | Sep (1–26) |
+|---|---|---:|---:|---:|---:|
+| tradetosurvive1 0x30fb41b5 | REWARD | $3.8k | $52.2k | $108.0k | $107.4k |
+| | Trading ΔPnL (user-pnl-api) | — | −$29.0k | −$50.5k | −$53.6k |
+| | Net | — | +$23.2k | +$57.6k | +$53.9k |
+| | Loss/reward | — | 0.56 | 0.47 | 0.50 |
+| PPMT 0x510f4963 | REWARD | $1.2k | $1.9k | $5.1k | $3.8k |
+| | ΔPnL | +$4.1k | +$1.4k | +$3.0k | −$0.6k |
+| | Net | +$5.3k | +$3.3k | +$8.1k | +$3.2k |
+
+Capital now: tradetosurvive1 ≈ $118k (1.7 %/day net in Sep); PPMT ≈ **$30.4k** (Sep ≈ 0.4 %/day net, not a small
+wallet). The growth (tradetosurvive1 ×28 from Jun to Aug) means weather pools expanded very recently. That is good for
+current yields but also shows how discretionary and transient these pools are (section 3, failure mode 3).
+
+The lead's small example, 0x04586f5d, is now at $529 of capital (vs $727 this morning). Its September figures are:
+rewards $160, ΔPnL −$834, **net −$675**.
+
+### 5.3 Local-time adverse-selection table (`src/live/hist_quote_local.py`): direction right, magnitude ~1.2–2× high
+
+`hist_quote_local.py` calls `hist_quote_as2.run_one`, which still fills the full N = 20 shares on **every** crossing print
+(even 1-share prints) and replenishes instantly. `src/audit/hist_as_local_windows.py` re-runs the same windows with the
+audited simulator. Results in $ per market-day, d = 1¢, "through" fills; the full grid is in `src/audit/hist_as_local_windows.csv`.
+
+| Window (local) | Lead | Audit, no print-size cap | Audit, print-size capped |
+|---|---:|---:|---:|
+| before D-1 00:00 | −2.71 | −2.28 | −1.25 |
+| D-1 00–12 | −2.38 | −0.65 | −0.60 |
+| D-1 12–18 | −1.69 | −0.70 | −0.86 |
+| D-1 18–24 | −0.27 | −0.13 | +0.11 |
+| D 00–06 | −4.27 | −1.67 | −2.01 |
+| D 06–10 | −4.05 | −1.33 | −1.60 |
+| **D 10–14** | **−30.7** | −17.2 | −17.0 |
+| D 14–end | −14.6 | −7.8 | −7.6 |
+
+Market-day-weighted over the whole pre-D window, the audited cost is **$0.5–1.1 per market-day** at d = 1–2¢
+(lead: ≈ $2). Both tables replay only *historical* takers. Neither captures the informed flow a tight quote attracts in a
+wide book (section 1b). The wallet test below shows that missing flow is what dominates.
+
+### 5.4 Decisive test: do LPs that avoid the observation day keep more of their rewards?
+
+`src/audit/closed_event_fills.py` pulled **906k maker fills** from all 608 daily-temperature events with endDate
+09-20…09-25, where the observation day is complete. 71 % of all maker shares were filled on the local observation day.
+`src/audit/discipline_split2.py` joins each LP-dominated wallet's observation-day share of fills with its 30-day
+rewards, trading P&L and capital:
+
+| Wallet fills on local obs day | n | Pooled loss/reward | Median loss/reward | Net/capital p25 / p50 / p75 | Share net > 0 |
+|---|---:|---:|---:|---:|---:|
+| < 20 % ("disciplined") | 38 | **0.90** | **0.91** | −0.02 / +0.35 / +1.87 %/day | 71 % |
+| 20–40 % | 28 | 0.50 | 0.78 | −0.15 / +0.24 / +0.62 %/day | 68 % |
+| 40–60 % | 14 | −1.14 | 0.82 | +0.03 / +0.19 / +0.62 %/day | 86 % |
+| ≥ 60 % | 16 | 0.54 | 0.43 | −0.00 / +0.54 / +1.72 %/day | 75 % |
+| **capital < $1.5k and < 30 % obs-day fills** | 19 | **0.89** | **0.94** | **−0.78 / +0.25 / +0.85 %/day** | 58 % |
+| capital < $5k and < 30 % obs-day fills | 34 | 0.76 | 0.81 | −0.14 / +0.39 / +2.05 %/day | 68 % |
+
+Avoiding the observation day does **not** improve the retained share of rewards in practice. Before D the fills are
+fewer but just as toxic per reward dollar. Forecast-model traders reprice 1–2-day-ahead buckets on every NWP cycle, and a
+resting min-size quote is exactly their counterparty.
+
+Caveats:
+- Rewards and trading P&L are wallet-wide (they include non-weather markets).
+- The "< 20 %" group has the highest gross rewards/capital (4.6 %/day median), consistent with pre-D quoting in thin,
+  fresh markets.
+- Survivorship bias is upward.
+
+### 5.5 Final calibrated estimate: disciplined small LP (daily temperature, quotes stop at local midnight before D)
+
+| Component | Bottom-up (simulators, audited) | Ground truth (small disciplined wallets) |
+|---|---|---|
+| Reward per quoted market-day (min-size quote, `src/audit/reward_bounds.py`, 14–17 UTC books) | JOIN best levels: $2.4–5.5; LEAD ±1¢ with rival matching: $4.4–8.8 (lead's lp_report3: $4.6–5.6) | $1–3 per filled market-day |
+| Capital per quoted market | $29 quote collateral + ~$15–25 inventory (locked ~1–1.5 days past quoting until resolution) → $45–55 | cash + positions snapshot |
+| Gross rewards / capital | 5–15 %/day | **≈ 4.5–4.8 %/day median** |
+| Adverse selection / capital | historical only: ~1–2.5 %/day (≈ 10–25 % of rewards) | **≈ 90 % of rewards** (pooled 0.89, median 0.94) |
+| **Net / capital** | 3–12 %/day (**not credible**: 10–40× above every real wallet) | **+0.25 %/day median (IQR −0.8 to +0.9 %/day); +0.4 %/day median for < $5k** |
+
+**Best estimate for a new, uninformed, disciplined small LP:**
+- **+0.2 to +0.4 %/day of capital median**, i.e. ≈ +$2–4/day on $1,000 and +$0.2–0.4/day on $100.
+- **IQR roughly −0.8 % to +1–2 %/day.**
+- **~35–40 % probability of a losing month.**
+- Survivorship and the absence of dead wallets bias this **upward**. The recent expansion of weather pools (×2–28 since
+  July) biases it upward too if pools revert.
+- It is far below the lead's implied (≈ $4.6–5.6 reward − $1–2.7 AS) / $19.5 ≈ 10–20 %/day, and ~300× below the
+  original $1,000/day on $700.
+- The lead's bottom-up number fails for three reasons: (i) share denominators on the wrong scale (5.1); (ii) capital
+  that excludes inventory; (iii) AS measured only on historical flow (5.3–5.4).
+- The only credible path to materially better numbers is a **forecast-centred** quote (a model edge), which would then
+  be a forecasting strategy that happens to collect rewards. It is not LP farming.
+
 ## Files
 
 - `src/audit/sim_lp_audit.py`: bias decomposition and corrected reward estimate on recorder data.
+- `src/audit/reward_bounds.py`: reward per quoted market-day for the disciplined universe (LEAD / LEAD+R / JOIN, with competitor bounds).
+- `src/audit/competitiveness_check.py`: scale test of `market_competitiveness` (`... lb` runs the lower-bound test).
+- `src/audit/hist_as_local_windows.py`: audited AS on the lead's local-time windows (`hist_as_local_windows.csv`).
+- `src/audit/closed_event_fills.py`, `src/audit/discipline_split2.py`: maker fills in closed temperature events and the observation-day discipline split (`data/audit/closed_event_maker_fills.json`, `data/audit/discipline_rows.json`).
+- `src/audit/discipline_split.py`: an earlier version of the split on currently rewarded markets. It is confounded because observation-day fills are under-sampled there; superseded by `discipline_split2.py`.
 - `src/audit/hist_as_audit.py`: corrected historical AS (size-capped fills, ask-side fix, local observation windows, spread/markout split). Results in `src/audit/hist_as_audit_results.csv`.
 - `src/audit/maker_fill_pnl.py`: resolution P&L of all actual maker fills by window and price.
 - `src/audit/wallet_ground_truth.py`: maker-wallet discovery, profiling, 30-day reward vs PnL, per-fill economics (cache in `data/audit/`).

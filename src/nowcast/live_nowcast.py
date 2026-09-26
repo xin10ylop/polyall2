@@ -97,7 +97,8 @@ def load_events():
             if b: buckets.append({"cid": m["conditionId"], "title": m.get("groupItemTitle"), "lo": b[0], "hi": b[1], "yes": toks[0], "no": toks[1],
                                   "fee": ((m.get("feeSchedule") or {}).get("rate", 0.05) if m.get("feesEnabled", True) else 0.0)})
         if buckets:
-            out.append({"slug": e["slug"], "kind": mk.group(1), "icao": icao, "unit": unit, "day": day.isoformat(), "end": end, "buckets": buckets})
+            out.append({"slug": e["slug"], "kind": mk.group(1), "icao": icao, "unit": unit, "day": day.isoformat(), "end": end, "buckets": buckets,
+                        "title": e["title"], "desc": desc})
     return out
 
 def metars(icaos):

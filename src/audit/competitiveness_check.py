@@ -4,7 +4,7 @@ resting book (so that share = Q_ours / (Q_ours + competitiveness))?  Undocumente
 Takes near-simultaneous snapshots of market_competitiveness (weather tag) and of the YES books, computes several candidate
 score definitions from the book and reports correlation, the median ratio comp/Q and its dispersion, per definition and by
 book shape (balanced two-sided vs one-sided). Repeats N times to check how fast `market_competitiveness` updates.
-Usage: python src/audit/competitiveness_check.py [n_rounds=2] [gap_s=120]
+Usage: python src/audit/competitiveness_check.py [n_rounds=2] [gap_s=120]   |   ... lb  (lower-bound test)
 """
 import sys, time, json, math, requests, numpy as np, pandas as pd
 
@@ -77,7 +77,7 @@ def snapshot():
     return pd.DataFrame(rows), t0
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and "lb" not in sys.argv:
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 2; gap = int(sys.argv[2]) if len(sys.argv) > 2 else 120
     snaps = []
     for i in range(n):
@@ -109,3 +109,28 @@ if __name__ == "__main__":
           f"{np.median(q_ours / (q_ours + y.comp)):.2f}; using book aggQmin = {np.median(q_ours / (q_ours + y['adjmid|all|aggQmin'])):.2f}; "
           f"using max(q1,q2) (sim_lp) = {np.median(q_ours / (q_ours + y['adjmid|all|max(q1,q2)'])):.2f}")
     pd.concat(snaps).to_csv("/tmp/competitiveness_check.csv", index=False)
+
+
+def lower_bound_test():
+    """For mid in [0.1,0.9], each maker's Q_min >= max(Q_one,Q_two)/3, so sum over makers >= (score of any single order)/3.
+    Using the largest single price level (size >= 10x min size, so very unlikely to consist only of sub-min orders),
+    count markets where market_competitiveness < that level's score / 3, i.e. where comp cannot be sum(Q_min)."""
+    M = multi(); B = books([m["tokens"][0]["token_id"] for m in M.values()])
+    n = viol = 0; ratios = []
+    for cid, m in M.items():
+        b = B.get(m["tokens"][0]["token_id"])
+        if not b or not b["bids"] or not b["asks"]: continue
+        v = m["rewards_max_spread"] or 4.5; mn = m["rewards_min_size"] or 20
+        bids = sorted([(float(x["price"]), float(x["size"])) for x in b["bids"]], key=lambda x: -x[0])
+        asks = sorted([(float(x["price"]), float(x["size"])) for x in b["asks"]], key=lambda x: x[0])
+        mid = (bids[0][0] + asks[0][0]) / 2
+        if not (0.1 <= mid <= 0.9) or asks[0][0] - bids[0][0] > 0.03: continue
+        best = max([sc(v, (mid - p) * 100) * s for p, s in bids if s >= 10 * mn] + [sc(v, (p - mid) * 100) * s for p, s in asks if s >= 10 * mn] + [0])
+        if best <= 0: continue
+        n += 1; viol += m["market_competitiveness"] < best / 3; ratios.append(m["market_competitiveness"] / (best / 3))
+    print(f"\nLOWER-BOUND TEST (mid in [0.1,0.9], spread<=3c, a level >=10x min size within v): n={n}; "
+          f"comp < (that level's score)/3 in {viol / max(1, n):.0%} of markets; median comp/(lower bound)={np.median(ratios):.3f}")
+
+
+if __name__ == "__main__" and "lb" in sys.argv:
+    lower_bound_test()

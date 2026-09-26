@@ -78,7 +78,7 @@ def intraday(F, rem_col, now_col, obs_now_col="obs_last_f", train_before=None):
 from scipy.optimize import minimize as _minimize
 from scipy.special import expit as _expit
 
-KMAX = {"F": 8, "C": 5}
+KMAX = {"F": 20, "C": 12}
 
 
 def _ord_nll(params, X, e, K):
@@ -110,17 +110,22 @@ def _ord_pmf(params, X, K):
 
 
 def exceed_features(F, rem_col, sofar_col=None, day_col=None):
-    """Design matrix: forecast remaining max minus obs max, current temp minus obs max, and (optional)
-    full-day forecast minus obs max. All in market unit."""
-    d_fc = (F[rem_col] - F.obs_max).values
-    d_now = (F.obs_now - F.obs_max).values
-    cols = [np.ones(len(F)), np.clip(d_fc, -15, 15), np.clip(d_now, -15, 0), np.clip(d_fc, 0, 15)]
+    """Design matrix: forecast remaining max minus obs max, current temp minus obs max, (optional)
+    today's forecast bias so far (obs max - forecast max so far) and full-day forecast minus obs max.
+    All in market unit. Scaled by unit (F -> /1.8) so pooled coefficients are comparable."""
+    sc = np.where(F.unit.values == "F", 1 / 1.8, 1.0)
+    d_fc = (F[rem_col] - F.obs_max).values * sc
+    d_now = (F.obs_now - F.obs_max).values * sc
+    cols = [np.ones(len(F)), np.clip(d_fc, -8, 8), np.clip(d_now, -8, 0), np.clip(d_fc, 0, 8)]
+    if sofar_col is not None and sofar_col in F:
+        b = ((F.obs_max - F[sofar_col]).values * sc)
+        cols.append(np.clip(np.nan_to_num(b, nan=0.0), -6, 6))
     if day_col is not None and day_col in F:
-        cols.append(np.clip((F[day_col] - F.obs_max).fillna(0).values, -15, 15))
+        cols.append(np.clip(((F[day_col] - F.obs_max).values * sc), -8, 8))
     return np.column_stack(cols)
 
 
-def intraday_exceed(F, rem_col, day_col=None, min_train=300):
+def intraday_exceed(F, rem_col, day_col=None, min_train=300, sofar_col=None, train_start=None):
     """Walk-forward by month, pooled over stations of one unit. Adds columns pmf (json list) and mu/sigma NaN."""
     F = F.copy().reset_index(drop=True)
     F["month"] = pd.to_datetime(F.date).dt.to_period("M")
@@ -133,10 +138,14 @@ def intraday_exceed(F, rem_col, day_col=None, min_train=300):
             te = gu[gu.month == mo]
             if len(tr) < min_train or len(te) == 0:
                 continue
-            Xtr = exceed_features(tr, rem_col, day_col=day_col)
+            if train_start is not None:
+                tr = tr[pd.to_datetime(tr.date) >= train_start]
+                if len(tr) < min_train:
+                    continue
+            Xtr = exceed_features(tr, rem_col, sofar_col=sofar_col, day_col=day_col)
             etr = np.clip((tr.y - tr.obs_max).values, 0, None).astype(int)
             par = _ord_fit(Xtr, etr, K)
-            P = _ord_pmf(par, exceed_features(te, rem_col, day_col=day_col), K)
+            P = _ord_pmf(par, exceed_features(te, rem_col, sofar_col=sofar_col, day_col=day_col), K)
             for i, idx in enumerate(te.index):
                 F.at[idx, "pmf"] = P[i].tolist()
     F["mu"] = np.where(F.pmf.notna(), 0.0, np.nan)  # placeholders so downstream filters keep rows
