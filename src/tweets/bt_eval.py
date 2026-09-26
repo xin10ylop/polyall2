@@ -69,3 +69,17 @@ def summarize(x, stakes=(10, 50, 200), cap_frac=0.25):
 if __name__ == "__main__":
     df = load()
     print(len(df), df.event_id.nunique())
+
+def snapshot_scores(df):
+    """Per (event, t) snapshot: log-loss of the realized bucket under the model q vs the market (mids normalized
+    over live buckets). Only snapshots where the winning bucket is live and priced."""
+    g = df.groupby(["event_id", "t"])
+    s = g.agg(msum=("mid", "sum"), qsum=("q", "sum"), acct=("acct", "first"), oos=("oos", "first"),
+              hbin=("hbin", "first"), H=("H", "first"), nlive=("k", "size"))
+    w = df[df.won == 1].set_index(["event_id", "t"])[["q", "mid"]]
+    s = s.join(w, how="inner")
+    s["p_mkt"] = (s.mid / s.msum).clip(1e-4, 1)
+    s["p_mod"] = (s.q / s.qsum).clip(1e-4, 1)
+    s["ll_mkt"] = -np.log(s.p_mkt); s["ll_mod"] = -np.log(s.p_mod)
+    s["ll_mix"] = -np.log((0.5 * s.p_mkt + 0.5 * s.p_mod).clip(1e-4, 1))
+    return s.reset_index()

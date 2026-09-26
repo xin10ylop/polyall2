@@ -101,7 +101,7 @@ def simulate(snaps, cfg, trades, N=None, d=0.015, fill_mode="at", min_rate=0.0, 
             last_ts[cid] = ts
             r["reward"] += share * m["rate"] / 1440.0 * dt_min
             r["q_samples"] += 1; r["share_sum"] += share
-            r["cap"] = n * (our_b + (1 - our_a)); r["rate"] = m["rate"]
+            r["cap"] = n * (our_b + (1 - our_a)); r["rate"] = m["rate"]; r.setdefault("mids", []).append(m1)
             # fills in (ts, ts+60]
             for (tt, p, sz, hits) in trades.get(cid, []):
                 if tt <= ts or tt > ts + 60: continue

@@ -39,7 +39,7 @@ def extreme_train(asset, F, hs=H_TOUCH, start='2024-10-20'):
     """For hourly t and horizon h: running max/min of ln(High/S_t), ln(Low/S_t) over (t, t+h], plus features."""
     spot = F.spot
     hi = spot['h'].values; lo = spot['l'].values; idx0 = spot.index.values[0]
-    T0 = pd.date_range(start, pd.Timestamp(int(spot.index.max()), unit='s', tz='UTC') - pd.Timedelta(days=1), freq='h', tz='UTC')
+    T0 = pd.date_range(pd.Timestamp(start, tz='UTC'), pd.Timestamp(int(spot.index.max()), unit='s', tz='UTC') - pd.Timedelta(days=1), freq='h')
     t = ((T0 - pd.Timestamp('1970-01-01', tz='UTC')) // pd.Timedelta('1s')).values.astype('int64')
     out = []
     # sparse-table style running max via pandas rolling on 1m series (forward windows)
