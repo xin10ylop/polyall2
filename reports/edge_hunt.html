@@ -108,7 +108,7 @@ footer{border-top:1px solid var(--rule);padding-top:16px;font-size:.85rem;color:
       <tr><td>Weather: buckets killed by the station reading</td><td>40,228 deaths, exact-second prints vs METAR time</td><td class="n">+9% ROI at 60 s; ≈0 at 5 min; negative at 10 min</td><td class="n">$250–540/day if ≤2 min</td><td>Yes: public feed lags 274 s</td><td><span class="pill p-reject">reject · race</span></td></tr>
       <tr><td>Weather: forecast model (D-1, D0 morning)</td><td>ECMWF IFS + NBM, walk-forward, prints-confirmed fills</td><td class="n">Market log-loss 0.220 vs model 0.252; stacking adds nothing; trading loses 2–4%/trade</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
       <tr><td>Weather: intraday "near-dead" probability model</td><td>forecast + running max + hour of day</td><td class="n">Market beats model at every hour 10–19 h; NO buys at 0.80–0.99 return −0.9% (−0.2% holdout)</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
-      <tr><td>LLM research + Jev judge on niche markets</td><td>Forward test on 27 open markets (resolve 27–30 Sep)</td><td class="n" id="llm-fwd">in progress</td><td class="n">—</td><td>No</td><td><span class="pill p-pend">pending</span></td></tr>
+      <tr><td>LLM research + Jev judge on niche markets</td><td>Forward test on 27 open markets (resolve 27–30 Sep)</td><td class="n" id="llm-fwd">26 forecasts pre-registered (git b25ec2b); scoring on 28 and 30 Sep</td><td class="n">—</td><td>No</td><td><span class="pill p-pend">pending</span></td></tr>
       <tr><td>Liquidity-reward farming (two-sided min-size quotes)</td><td>Live books + 243 real LP wallets (rewards vs PnL)</td><td class="n">Median net +0.25%/day; 35–40% losing months</td><td class="n">—</td><td>Needs fast cancels</td><td><span class="pill p-reject">reject</span></td></tr>
       <tr><td>Crypto "above K" / range / up-down vs vol model</td><td>373 events, 3 fill models, OOS</td><td class="n">+1.9% with 5-min delay (t≈1); up-down edge vanishes at 1 min</td><td class="n">—</td><td>Up-down: yes</td><td><span class="pill p-reject">reject</span></td></tr>
       <tr><td>Mentions: fade YES longshots</td><td>3,816 markets, executable NO buys</td><td class="n">In-sample +3–14% → Jul–Sep ≈0 (|t|&lt;1.3)</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
@@ -165,11 +165,15 @@ footer{border-top:1px solid var(--rule);padding-top:16px;font-size:.85rem;color:
 
 <section class="col">
   <h2>What starting with $100 realistically looks like</h2>
-  <p>The two adopted edges together deploy about $1.1k a day and earn roughly $30–35 a day. That needs
-  $1–2k of working capital, because barrier trades use $1k clips. From $100, the tweet-count edge alone earns
-  cents per day, since the books hold only $1–80 near the price. No tested strategy turns $100 into $100 a day.
-  The wallets that make $100–300 a day with about $1k either win the weather data race or research niche markets
-  by hand.</p>
+  <p>The two adopted edges together stake about $3.7k a day (barrier trades at ~$1k, tweet trades at the $1–80 the
+  books hold) and earn roughly $35–40 a day. Barrier positions settle within 12 hours, so $2–4k of capital covers it.
+  From $100, the same rules earn under $1 a day. No tested strategy turns $100 into $100 a day. The wallets that do
+  make $100–300 a day on about $1k either win the weather data race with faster feeds, or research niche markets
+  by hand every day.</p>
+  <p>If you want to chase the larger number, there are two routes, and neither is proven. One is to buy a faster
+  observation feed and compete in the weather race; the backtest says $250–540 a day at 60–120 s, with a thinning
+  margin. The other is to automate niche research with the LLM + Jev pipeline, which only the forward test can
+  validate.</p>
 </section>
 
 <section class="col">
@@ -177,11 +181,14 @@ footer{border-top:1px solid var(--rule);padding-top:16px;font-size:.85rem;color:
   <p>Everything is on branch <code>claude/nice-fermi-75y27f</code>. The bot defaults to paper mode and refuses to
   trade live from a geoblocked IP.</p>
 <pre>pip install polymarket-client requests pandas timezonefinder
-# paper mode (default): simulated fills against live books
-PAPER=1 python3 bot/strategies/dead_buckets.py
-python3 bot/settle.py            # mark paper fills to resolution
-# live (only from an allowed jurisdiction, your own account)
-PAPER=0 POLYMARKET_PRIVATE_KEY=... POLYMARKET_WALLET_ADDRESS=... python3 bot/strategies/...</pre>
+# paper mode (default): simulated fills against live order books
+PAPER=1 python3 bot/strategies/btc_barrier_no.py      # adopted: sell daily BTC barrier longshots
+python3 src/llm_pipeline/research.py 20              # LLM research + Jev judge (OpenRouter key in .env)
+python3 bot/settle.py                                # mark paper fills to resolution
+# live: only from a jurisdiction Polymarket allows, with your own account
+PAPER=0 POLYMARKET_PRIVATE_KEY=... POLYMARKET_WALLET_ADDRESS=... python3 bot/strategies/btc_barrier_no.py</pre>
+  <p>Paper monitors running now: BTC barrier strategy, weather dead-bucket harvester, a Hong Kong Observatory
+  live test, and the reward/book recorders.</p>
 </section>
 
 <footer>Research notes: <code>research/01–10</code>, audit: <code>research/audit_lp_rewards.md</code>.

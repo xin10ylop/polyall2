@@ -24,7 +24,7 @@ def load():
         out.append(d)
     pn = pd.concat(out, ignore_index=True)
     bad = pn.event_slug.str.contains('before-|hit-in-20\\d\\d$', regex=True)
-    pn = pn[(pn.W1 < NOW) & ~bad & (pn.stale <= 3600)].copy()
+    pn = pn[(pn.W1 < NOW) & ~bad & (pn.stale <= 3600) & (pn.H > 0)].copy()
     pn['fam'] = pn.series.str.extract(r'hit-price-(\w+)$')[0]
     pn['half'] = np.where(pn.t < SPLIT, 'H1', 'H2')
     pn['day'] = pd.to_datetime(pn.t, unit='s').dt.strftime('%Y-%m-%d')
