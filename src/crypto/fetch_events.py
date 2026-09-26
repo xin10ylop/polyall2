@@ -24,6 +24,11 @@ SERIES = {
     41: 'btc-up-or-down-daily', 10114: 'btc-up-or-down-hourly', 10331: 'btc-up-or-down-4h',
     40: 'eth-up-or-down-daily', 10117: 'eth-up-or-down-hourly',
     10192: 'btc-up-or-down-15m', 10684: 'btc-up-or-down-5m',
+    # finance / alt barrier families (Vagabund97 follow-up)
+    11397: 'gold-hit-price-weekly', 12052: 'xauusd-hit-month', 11398: 'silver-hit-price-weekly', 11910: 'xagusd-hit-month',
+    11399: 'wti-crude-oil-hit-price-weekly', 11401: 'natural-gas-hit-price-weekly', 11908: 'ng-hit-month', 11616: 'gas-ng-hit-monthly',
+    11389: 'spy-hit-price-weekly', 11909: 'spy-hit-month', 10482: 'nvidia-hit-price-monthly', 11380: 'nvidia-hit-price-weekly',
+    10075: 'dogecoin-hit-price-monthly', 10082: 'hyperliquid-hit-price-monthly', 10688: 'bnb-hit-price-monthly',
 }
 
 
