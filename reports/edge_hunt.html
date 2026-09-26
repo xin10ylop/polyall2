@@ -106,7 +106,8 @@ footer{border-top:1px solid var(--rule);padding-top:16px;font-size:.85rem;color:
       <tr><td>Tweet counts, small X accounts (Cruz, Khamenei, CZ, NYC Mayor)</td><td>xtracker as-of counts, NegBin model, prints-confirmed fills, Jun–Sep OOS</td><td class="n">+18.6% ROI, t 2.3; event-bootstrap 90% CI +3% to +35%. Lumpy: top 5 events = 66% of P&amp;L</td><td class="n">≈$54/day deployed → ≈$10/day</td><td>No (entries &gt;12 h before end)</td><td><span class="pill p-adopt">adopt · small</span></td></tr>
       <tr><td>Sell daily BTC barrier longshots (YES 0.5–3¢, ≤12 h left)</td><td>7 months, 1,460 strikes, both halves, real fills</td><td class="n">+0.74%/trade; day-bootstrap 90% CI +0.50% to +0.94%; 4 losses in 1,468 (0.27% vs 0.8% break-even)</td><td class="n">≈3.6 trades/day, ≈$25/day at $1k</td><td>No</td><td><span class="pill p-adopt">adopt · tail risk</span></td></tr>
       <tr><td>Weather: buckets killed by the station reading</td><td>40,228 deaths, exact-second prints vs METAR time</td><td class="n">+9% ROI at 60 s; ≈0 at 5 min; negative at 10 min</td><td class="n">$250–540/day if ≤2 min</td><td>Yes: public feed lags 274 s</td><td><span class="pill p-reject">reject · race</span></td></tr>
-      <tr><td>Weather: forecast / intraday probability model</td><td>ECMWF + NBM + obs, walk-forward</td><td class="n" id="wx-model">in progress</td><td class="n">—</td><td>—</td><td><span class="pill p-pend">pending</span></td></tr>
+      <tr><td>Weather: forecast model (D-1, D0 morning)</td><td>ECMWF IFS + NBM, walk-forward, prints-confirmed fills</td><td class="n">Market log-loss 0.220 vs model 0.252; stacking adds nothing; trading loses 2–4%/trade</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
+      <tr><td>Weather: intraday "near-dead" probability model</td><td>forecast + running max + hour of day</td><td class="n">Market beats model at every hour 10–19 h; NO buys at 0.80–0.99 return −0.9% (−0.2% holdout)</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
       <tr><td>LLM research + Jev judge on niche markets</td><td>Forward test on 27 open markets (resolve 27–30 Sep)</td><td class="n" id="llm-fwd">in progress</td><td class="n">—</td><td>No</td><td><span class="pill p-pend">pending</span></td></tr>
       <tr><td>Liquidity-reward farming (two-sided min-size quotes)</td><td>Live books + 243 real LP wallets (rewards vs PnL)</td><td class="n">Median net +0.25%/day; 35–40% losing months</td><td class="n">—</td><td>Needs fast cancels</td><td><span class="pill p-reject">reject</span></td></tr>
       <tr><td>Crypto "above K" / range / up-down vs vol model</td><td>373 events, 3 fill models, OOS</td><td class="n">+1.9% with 5-min delay (t≈1); up-down edge vanishes at 1 min</td><td class="n">—</td><td>Up-down: yes</td><td><span class="pill p-reject">reject</span></td></tr>
@@ -143,7 +144,10 @@ footer{border-top:1px solid var(--rule);padding-top:16px;font-size:.85rem;color:
   delivered METARs ≈8 minutes after observation and the NWS API ≈20 minutes after. My own 2-minute live monitor
   saw zero dead buckets below 0.999 today.</p>
   <h3 id="wx-model-h">Forecast and intraday models</h3>
-  <p id="wx-model-text" class="muted">Results pending from the walk-forward ECMWF/NBM model.</p>
+  <p>A walk-forward model built on ECMWF open data and the US National Blend of Models was less accurate than the
+  market (bucket log-loss 0.252 vs 0.220 the day before) and added nothing when stacked with the price. An intraday
+  model using the forecast, the running maximum and the hour of day was also beaten by the market at every hour.
+  In weather, slow public data is already in the price. The money is in being first with the reading.</p>
 </section>
 
 <section class="col">
