@@ -19,8 +19,18 @@ MARGIN = int(os.environ.get("DB_MARGIN", 2)); MAX_PRICE = float(os.environ.get("
 MIN_EDGE = float(os.environ.get("DB_MIN_EDGE", 0.005)); CAP_USD = float(os.environ.get("DB_CAP_USD", 25))
 CITY_DAY_CAP = float(os.environ.get("DB_CITY_DAY_CAP", 60)); CYCLE = int(os.environ.get("DB_CYCLE", 60))
 
+def _state_file(ex):
+    return os.path.join(os.path.dirname(ex.ledger), "dead_spent.json")
+
+def _load_spent(ex):
+    try: return json.load(open(_state_file(ex)))
+    except Exception: return {}
+
+def _save_spent(ex, spent):
+    json.dump(spent, open(_state_file(ex), "w"))
+
 def run():
-    ex = Executor(); spent = {}; last_ev = 0; events = []
+    ex = Executor(); spent = _load_spent(ex); last_ev = 0; events = []
     while True:
         t0 = time.time()
         if os.path.exists(os.path.join(os.path.dirname(ex.ledger), "KILL")):
@@ -52,6 +62,7 @@ def run():
                         log.info("BUY NO %s %s ext=%s %.1f sh @ %.3f", e["slug"], b["title"], ext, sh, avg)
             n_dead = sum(1 for _ in spent)
             log.info("cycle ok: events=%d positions=%d", len(events), len([k for k in spent if k.startswith("0x")]))
+            _save_spent(ex, spent)
         except Exception as exn:
             log.exception("cycle error: %s", exn)
         time.sleep(max(5, CYCLE - (time.time() - t0)))

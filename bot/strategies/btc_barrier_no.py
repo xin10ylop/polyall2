@@ -26,10 +26,22 @@ def open_events(asset):
         if ev and not ev[0].get("closed"): out.append(ev[0])
     return out
 
+def _state_file(ex):
+    return os.path.join(os.path.dirname(ex.ledger), "barrier_spent.json")
+
+def _load_spent(ex):
+    try: return json.load(open(_state_file(ex)))
+    except Exception: return {}
+
+def _save_spent(ex, spent):
+    json.dump(spent, open(_state_file(ex), "w"))
+
 def run():
-    ex = Executor(); spent = {}
+    ex = Executor(); spent = _load_spent(ex)
     while True:
         t0 = time.time()
+        if os.path.exists(os.path.join(os.path.dirname(ex.ledger), "KILL")):
+            log.warning("KILL file present; stopping"); return
         try:
             for asset in ASSETS:
                 for ev in open_events(asset):
@@ -46,7 +58,7 @@ def run():
                         no_ask = round(1 - bids[0][0], 4)
                         fs = m.get("feeSchedule") or {}; rate = fs.get("rate", 0.07) if m.get("feesEnabled", True) else 0.0
                         if no_ask > 1 - mid + SLIP: continue
-                        cid = m["conditionId"]
+                        cid = no  # per-strike exposure key = NO token id
                         room = min(CAP_USD - spent.get(cid, 0), EVENT_CAP - spent.get(ev["slug"], 0))
                         if room < 5: continue
                         sh, avg = ex.buy_taker(no, 1 - mid + SLIP, room, rate, tag=f"barrier {ev['slug']} {m.get('groupItemTitle')} mid={mid:.4f} h={h_left:.1f}")
@@ -54,6 +66,7 @@ def run():
                             spent[cid] = spent.get(cid, 0) + sh * avg; spent[ev["slug"]] = spent.get(ev["slug"], 0) + sh * avg
                             log.info("BUY NO %s %s %.1f sh @ %.4f (mid %.4f, %.1f h left)", ev["slug"], m.get("groupItemTitle"), sh, avg, mid, h_left)
             log.info("cycle ok")
+            _save_spent(ex, spent)
         except Exception as exn:
             log.exception("cycle error: %s", exn)
         time.sleep(max(10, CYCLE - (time.time() - t0)))

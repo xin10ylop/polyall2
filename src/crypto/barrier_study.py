@@ -31,8 +31,33 @@ def load():
     return pn
 
 
+MB = [0.005, 0.01, 0.02, 0.03, 0.045, 0.06]
+COST = {}   # (asset, family-group, mid-bucket) -> median effective NO cost vs (1-mid), estimated on H1 real fills
+
+
+def calibrate_cost(pn):
+    """Effective cost = actual NO fill price - (1 - mid) for rows with a real fill in (t+60s,t+15m], H1 only."""
+    d = pn[(pn.mid >= 0.005) & (pn.mid < 0.06) & (pn.tau_h <= 24) & (pn.half == 'H1') & pn.bid_slow.notna()].copy()
+    d['c'] = (1 - d.bid_slow) - (1 - d.mid)
+    d['mb'] = np.digitize(d.mid, MB) - 1
+    d['fg'] = np.where(d.fam == 'daily', 'daily', 'wm')
+    pooled = d.groupby('mb').c.median().to_dict()
+    for (a, fg, mb), g in d.groupby(['asset', 'fg', 'mb']):
+        COST[(a, fg, mb)] = float(g.c.median()) if len(g) >= 15 else pooled.get(mb, 0.01)
+    for a in ASSETS:
+        for fg in ('daily', 'wm'):
+            for mb in range(len(MB) - 1):
+                COST.setdefault((a, fg, mb), pooled.get(mb, 0.01))
+    return COST
+
+
 def price(d, bucket):
-    c = 0.003 if bucket == 'A' else 0.01
+    if COST:
+        mb = np.clip(np.digitize(d.mid.values, MB) - 1, 0, len(MB) - 2)
+        fg = np.where(d.fam.values == 'daily', 'daily', 'wm')
+        c = np.array([max(COST[(a, f, m)], 0.001) for a, f, m in zip(d.asset.values, fg, mb)])
+    else:
+        c = 0.003 if bucket == 'A' else 0.01
     mid_px = np.clip(1 - d.mid.values + c, 0, 0.999)
     real = 1 - d.bid_slow.values if 'bid_slow' in d else np.full(len(d), np.nan)
     has_real = np.isfinite(real)
