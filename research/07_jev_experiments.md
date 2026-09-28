@@ -13,3 +13,25 @@ Cost measured: ~$0.00002–0.00003 per call (input tokens only). All experiments
 Conclusion: Jev is **not** a source of alpha by itself. Its proven role in the final system is a fast, calibrated
 **verification gate** (rules/station/unit checks on every new market before the bot quotes it, and a
 kill-switch style check on free-text status messages), with thresholds chosen from the measured error rates above.
+
+## Forward test: LLM research + Jev judge (interim, 28 Sep 2026)
+
+27 open markets, forecasts pre-registered at commit 34a196c (`research/forward_test/`), scored with
+`src/jev_tests/fwd_score.py resolve` against the snapshot bid/ask (taker, 5¢ edge threshold, fee included).
+11 of 27 have resolved so far (MTV VMAs ×7, Israel–Lebanon, MrBeast views, Trump post count, Codex resets).
+
+| Forecaster | Brier (lower is better) | Trades | Sum of per-trade ROI | Won / lost |
+|---|---|---|---|---|
+| Market mid at snapshot | 0.093 | — | — | — |
+| LLM research alone | **0.075** | 9 | −0.31 (−3.5%/trade) | 6 / 3 |
+| Jev judging the LLM's evidence | 0.161 | 9 | −2.86 (−32%/trade) | 4 / 5 |
+| 50/50 blend (pipeline's rule) | 0.108 | 9 | −2.86 (−32%/trade) | 4 / 5 |
+
+Interim reading, n = 11 (far too small to conclude anything):
+* The LLM's probabilities scored better than the market on Brier, but lost money: the 3 losses were cheap
+  contrarian buys (NO at 0.17 and 0.34, YES at 0.16) that each lose the full stake.
+* Jev as a judge of the evidence was worse than both. It moved away from the market in the wrong direction on
+  Israel–Lebanon (0.36 vs market 0.69, resolved YES) and on the Trump post count (0.58 vs 0.15, resolved NO).
+  Blending it in turned the LLM's winners on those two into losers. The judge step is dropped from the
+  pipeline unless the final 27 reverse this.
+* Final scoring when the last markets resolve on 30 Sep.

@@ -21,7 +21,7 @@ Rejected after testing (details in `research/`):
 
 Pending forward tests:
 
-* **LLM research + Jev judge.** 26 pre-registered forecasts in `research/forward_test/`.
+* **LLM research + Jev judge.** 27 pre-registered forecasts in `research/forward_test/`. Interim (11 resolved): LLM Brier 0.075 vs market 0.093, but taker trades −3.5%/trade; Jev judge worse (0.161). See `research/07_jev_experiments.md`.
 * **Hong Kong Observatory live dead-bucket test.** Script: `src/nowcast/hk_monitor.py`.
 
 **Hard constraint:** Polymarket geoblocks the US (this research machine is blocked). Run live trading only from an

@@ -10,7 +10,9 @@ fills = [json.loads(l) for l in open(led) if '"taker_buy"' in l]
 cache = {}
 def token_state(tok):
     if tok in cache: return cache[tok]
-    m = requests.get("https://gamma-api.polymarket.com/markets", params={"clob_token_ids": tok}, timeout=20).json()
+    # gamma hides closed markets unless closed=true is passed; try closed first, then open
+    m = requests.get("https://gamma-api.polymarket.com/markets", params={"clob_token_ids": tok, "closed": "true"}, timeout=20).json() \
+        or requests.get("https://gamma-api.polymarket.com/markets", params={"clob_token_ids": tok}, timeout=20).json()
     st = None
     if m:
         m = m[0]; toks = json.loads(m["clobTokenIds"]); i = toks.index(tok)

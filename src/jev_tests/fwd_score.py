@@ -28,24 +28,27 @@ else:
     rows = []
     for r in llm:
         s = snap[r["cid"]]
-        m = requests.get("https://gamma-api.polymarket.com/markets", params={"condition_ids": r["cid"]}).json()
+        # gamma hides closed markets unless closed=true is passed
+        m = requests.get("https://gamma-api.polymarket.com/markets", params={"condition_ids": r["cid"], "closed": "true"}, timeout=20).json()
         if not m: continue
         m = m[0]
         try: op = [float(x) for x in json.loads(m["outcomePrices"])]
         except Exception: continue
         if not m.get("closed") or max(op) < 0.99: continue
         y = int(op[0] > 0.5)
-        rows.append((s["q"][:60], y, s["mid"], s["bid"], s["ask"], r["p_yes"], jev.get(r["cid"])))
+        pj = jev.get(r["cid"])
+        pc = None if pj is None else 0.5 * r["p_yes"] + 0.5 * pj  # the pipeline's decision rule (research.py)
+        rows.append((s["q"][:60], y, s["mid"], s["bid"], s["ask"], r["p_yes"], pj, pc))
     def brier(p, y): return (p - y) ** 2
     n = len(rows); print("resolved", n, "of", len(llm))
     if n:
-        for name, idx in (("market", 2), ("llm", 5), ("jev", 6)):
+        for name, idx in (("market", 2), ("llm", 5), ("jev", 6), ("llm+jev", 7)):
             v = [brier(x[idx], x[1]) for x in rows if x[idx] is not None]
             print(name, "Brier", round(sum(v) / len(v), 4), "n", len(v))
-        for name, idx in (("llm", 5), ("jev", 6)):
+        for name, idx in (("llm", 5), ("jev", 6), ("llm+jev", 7)):
             pnl = 0; k = 0
-            for q, y, mid, bid, ask, pl, pj in rows:
-                p = pl if idx == 5 else pj
+            for x in rows:
+                y, bid, ask, p = x[1], x[3], x[4], x[idx]
                 if p is None: continue
                 if p - ask > 0.05: pnl += (y - ask - 0.05 * ask * (1 - ask)) / ask; k += 1
                 elif (1 - p) - (1 - bid) > 0.05: pnl += ((1 - y) - (1 - bid) - 0.05 * bid * (1 - bid)) / (1 - bid); k += 1
