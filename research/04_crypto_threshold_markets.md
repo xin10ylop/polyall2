@@ -221,6 +221,27 @@ Code: `src/crypto/barrier_panels.py` (panels, decision times W1−{24,18,12,6,3,
 ### 8.4 Live scanner
 `python src/crypto/barrier_signals.py [--max-hours 12] [--min-x 4.25] [--rv-filter] [--all] [--json out.json]` lists every open daily/weekly/monthly BTC/ETH/SOL/XRP barrier strike that is untouched and within the time limit. For each it shows the YES mid, the NO ask (from the NO book, or 1 − YES bid), NO depth within 0.3 c / 1 c, the fee, the ROI if untouched, the break-even touch probability, and x = distance / (24h realised σ·√τ). Rows are flagged when x < min-x or when 1h RV is above its 30-day 90th percentile. It only reads data and never places orders. Its x uses a plain 24h-RV σ rather than the backtest's t-model scale. On the panel, model-x / (dist ÷ RV24·√τ) has a median of 1.37 (IQR 1.18–1.63), so the backtest filter x ≥ 4.25 corresponds to **`--min-x 3.1`** in scanner units (approximate).
 
+### 8.5 Out-of-time replay after the freeze
+The cloud container cannot host an always-on paper bot, so `src/crypto/forward_replay.py` replays the frozen rule
+after the fact from public data (prices-history, taker prints, Binance spot for x), reusing this study's functions.
+It is idempotent and meant to be re-run daily. Validation: on ET days 10–14 Sep it reproduces the backtest's 145
+first-per-strike entries exactly (all fields). `--validate` repeats that check; `--mid-rule doc` uses the documented
+[0.5¢, 3¢) band on exact mids instead of the study's float32 boundary.
+
+First forward window (ET days 25–28 Sep, 16 events, all 4 assets; mean PnL per $1 after fee, real-print fills):
+
+| Grid | Filter | Trades | Losses | Mean PnL | Of which strictly after the freeze commit |
+|---|---|---|---|---|---|
+| Study (W1−12/6/3/1 h) | none | 108 | 0 | +1.22% | 63 trades, +1.37% |
+| Study | x ≥ 4.25 | 85 | 0 | +1.00% | 49 trades, +1.08% |
+| Bot (every 10 min) | none | 123 | 0 | +1.35% | 71 trades, +1.50% |
+| Bot | x ≥ 4.25 | 78 | 0 | +0.96% | 45 trades, +1.10% |
+
+Zero losses in ~100 trades says nothing about the tail: at the backtest loss rate (15 in 5,486) about 0.3 losses
+were expected. What it does show is that entries keep appearing at the same rate and price after the freeze. Only
+13% of study-grid entries had a real print within 15 min (BTC 37%, SOL/XRP 0%); on the §8.1 calibrated-cost
+convention the pooled mean is +0.73% (+0.52% with the filter). The tail needs weeks of replay before it says anything.
+
 ## 9. Follow-up: finance/commodity and altcoin barrier markets vs. wallet Vagabund97
 
 Code: `src/crypto/fetch_fin_underlying.py`, `analyze_fin_barrier.py` (panel + walk-forward model), `fin_backtest.py`, `fin_prints.py`, `fin_print_trigger.py` (executable print-based backtests), `fin_vaga.py` (wallet comparison), `altm_panels.py`. Data: `data/crypto/fin/`, `data/crypto/vaga/`, `data/crypto/panel_fin_barrier.parquet`, `data/crypto/fin_print_trigger_*.parquet`.

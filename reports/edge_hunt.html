@@ -191,8 +191,12 @@ python3 src/llm_pipeline/research.py 20              # LLM research + Jev judge 
 python3 bot/settle.py                                # mark paper fills to resolution
 # live: only from a jurisdiction Polymarket allows, with your own account
 PAPER=0 POLYMARKET_PRIVATE_KEY=... POLYMARKET_WALLET_ADDRESS=... python3 bot/strategies/btc_barrier_no.py</pre>
-  <p>Paper monitors running now: BTC barrier strategy, weather dead-bucket harvester, a Hong Kong Observatory
-  live test, and the reward/book recorders.</p>
+  <p>The cloud research container shuts down between sessions, so the paper bots only ran in short bursts
+  (5 BTC barrier fills, all won, +$3.48 on $449) and the Hong Kong test has not yet seen a peak. Run them on an
+  always-on machine. The barrier rule is forward-tested instead by <code>src/crypto/forward_replay.py</code>, which
+  replays each new day from public prints and reproduces the backtest exactly on 10–14 Sep. First window, 25–28 Sep:
+  108 entries on 4 assets, no losses, +1.2% each. About 0.3 losses were expected at the backtest rate, so this does
+  not yet test the tail.</p>
 </section>
 
 <footer>Research notes: <code>research/01–10</code>, audit: <code>research/audit_lp_rewards.md</code>.
