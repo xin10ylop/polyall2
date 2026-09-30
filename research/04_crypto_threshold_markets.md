@@ -228,19 +228,20 @@ It is idempotent and meant to be re-run daily. Validation: on ET days 10–14 Se
 first-per-strike entries exactly (all fields). `--validate` repeats that check; `--mid-rule doc` uses the documented
 [0.5¢, 3¢) band on exact mids instead of the study's float32 boundary.
 
-First forward window (ET days 25–28 Sep, 16 events, all 4 assets; mean PnL per $1 after fee, real-print fills):
+Forward window so far (ET days 25–29 Sep, 20 events, all 4 assets; mean PnL per $1 after fee, real-print fills;
+the post-freeze column is per share, ≈ per $1 at these prices):
 
 | Grid | Filter | Trades | Losses | Mean PnL | Of which strictly after the freeze commit |
 |---|---|---|---|---|---|
-| Study (W1−12/6/3/1 h) | none | 108 | 0 | +1.22% | 63 trades, +1.37% |
-| Study | x ≥ 4.25 | 85 | 0 | +1.00% | 49 trades, +1.08% |
-| Bot (every 10 min) | none | 123 | 0 | +1.35% | 71 trades, +1.50% |
-| Bot | x ≥ 4.25 | 78 | 0 | +0.96% | 45 trades, +1.10% |
+| Study (W1−12/6/3/1 h) | none | 139 | 0 | +1.20% | 94 trades, +1.26% |
+| Study | x ≥ 4.25 | 108 | 0 | +1.02% | 72 trades, +1.06% |
+| Bot (every 10 min) | none | 156 | 0 | +1.36% | 104 trades, +1.43% |
+| Bot | x ≥ 4.25 | 98 | 0 | +0.96% | 65 trades, +1.05% |
 
-Zero losses in ~100 trades says nothing about the tail: at the backtest loss rate (15 in 5,486) about 0.3 losses
+Zero losses in ~140 trades says nothing about the tail: at the backtest loss rate (15 in 5,486) about 0.4 losses
 were expected. What it does show is that entries keep appearing at the same rate and price after the freeze. Only
-13% of study-grid entries had a real print within 15 min (BTC 37%, SOL/XRP 0%); on the §8.1 calibrated-cost
-convention the pooled mean is +0.73% (+0.52% with the filter). The tail needs weeks of replay before it says anything.
+15% of study-grid entries had a real print within 15 min (BTC 38%, SOL/XRP 0%); on the §8.1 calibrated-cost
+convention the pooled mean is +0.71% (+0.52% with the filter). The tail needs weeks of replay before it says anything.
 
 ## 9. Follow-up: finance/commodity and altcoin barrier markets vs. wallet Vagabund97
 

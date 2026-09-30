@@ -109,7 +109,7 @@ footer{border-top:1px solid var(--rule);padding-top:16px;font-size:.85rem;color:
       <tr><td>Weather: buckets killed by the station reading</td><td>40,228 deaths, exact-second prints vs METAR time</td><td class="n">+9% ROI at 60 s; ≈0 at 5 min; negative at 10 min</td><td class="n">$250–540/day if ≤2 min</td><td>Yes: public feed lags 274 s</td><td><span class="pill p-reject">reject · race</span></td></tr>
       <tr><td>Weather: forecast model (D-1, D0 morning)</td><td>ECMWF IFS + NBM, walk-forward, prints-confirmed fills</td><td class="n">Market log-loss 0.220 vs model 0.252; stacking adds nothing; trading loses 2–4%/trade</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
       <tr><td>Weather: intraday "near-dead" probability model</td><td>forecast + running max + hour of day</td><td class="n">Market beats model at every hour 10–19 h; NO buys at 0.80–0.99 return −0.9% (−0.2% holdout)</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
-      <tr><td>LLM research + Jev judge on niche markets</td><td>Forward test on 27 open markets (resolve 27–30 Sep)</td><td class="n" id="llm-fwd">11 of 27 resolved (28 Sep): Brier market 0.093, LLM 0.075, Jev judge 0.161; 9 taker trades each: LLM −3.5%/trade, LLM+Jev −32%/trade. Final 30 Sep</td><td class="n">—</td><td>No</td><td><span class="pill p-pend">pending</span></td></tr>
+      <tr><td>LLM research + Jev judge on niche markets</td><td>Pre-registered forward test on 27 open markets (23 resolved by 30 Sep)</td><td class="n" id="llm-fwd">Brier market 0.119, LLM 0.121, Jev judge 0.181. Taker trades: LLM 17, −24% each; LLM+Jev 18, −32% each</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
       <tr><td>Liquidity-reward farming (two-sided min-size quotes)</td><td>Live books + 243 real LP wallets (rewards vs PnL)</td><td class="n">Median net +0.25%/day; 35–40% losing months</td><td class="n">—</td><td>Needs fast cancels</td><td><span class="pill p-reject">reject</span></td></tr>
       <tr><td>Crypto "above K" / range / up-down vs vol model</td><td>373 events, 3 fill models, OOS</td><td class="n">+1.9% with 5-min delay (t≈1); up-down edge vanishes at 1 min</td><td class="n">—</td><td>Up-down: yes</td><td><span class="pill p-reject">reject</span></td></tr>
       <tr><td>Mentions: fade YES longshots</td><td>3,816 markets, executable NO buys</td><td class="n">In-sample +3–14% → Jul–Sep ≈0 (|t|&lt;1.3)</td><td class="n">—</td><td>No</td><td><span class="pill p-reject">reject</span></td></tr>
@@ -161,10 +161,11 @@ footer{border-top:1px solid var(--rule);padding-top:16px;font-size:.85rem;color:
   leaderboards, consensus figures). Jev then judges the evidence against the market's rules. This matches how the
   most durable small wallets work (Started-with-20-USD: $20 in January, +$55k by September; Quarrelsome-Branch:
   93% of 95 weeks profitable). A backtest can't measure this honestly, because web search leaks outcomes. So it
-  is running as a forward test on 27 open markets that resolve 27–30 September. Interim, with 11 resolved: the
-  LLM's probabilities beat the market's on Brier (0.075 vs 0.093) but its 9 trades still lost 3.5% each, because
-  its 3 losses were cheap contrarian buys. Jev judging the same evidence did worse than both (Brier 0.161) and
-  pulled the blend into two extra losing trades. Eleven markets is far too few to decide anything.</p>
+  was run as a forward test: 27 forecasts committed to git before the markets resolved. With 23 resolved, the
+  LLM's research was no more accurate than the market price (Brier 0.121 vs 0.119), and its 17 trades lost 24%
+  each. Most losses came from disagreeing with a favourite, which usually won, so the cheap side went to zero. An
+  early lead after 11 markets disappeared. Jev judging the same evidence did worse (Brier 0.181). The pipeline is
+  rejected; Jev stays only as the rules check.</p>
 </section>
 
 <section class="col">
@@ -174,10 +175,9 @@ footer{border-top:1px solid var(--rule);padding-top:16px;font-size:.85rem;color:
   From $100, the same rules earn under $1 a day. No tested strategy turns $100 into $100 a day. The wallets that do
   make $100–300 a day on about $1k either win the weather data race with faster feeds, or research niche markets
   by hand every day.</p>
-  <p>If you want to chase the larger number, there are two routes, and neither is proven. One is to buy a faster
-  observation feed and compete in the weather race; the backtest says $250–540 a day at 60–120 s, with a thinning
-  margin. The other is to automate niche research with the LLM + Jev pipeline, which only the forward test can
-  validate.</p>
+  <p>If you want to chase the larger number, one route is left, and it is not proven: buy a faster observation
+  feed and compete in the weather race. The backtest says $250–540 a day at 60–120 s, with a thinning margin.
+  Automating niche research with the LLM + Jev pipeline was the other candidate, and it failed its forward test.</p>
 </section>
 
 <section class="col">
@@ -194,9 +194,9 @@ PAPER=0 POLYMARKET_PRIVATE_KEY=... POLYMARKET_WALLET_ADDRESS=... python3 bot/str
   <p>The cloud research container shuts down between sessions, so the paper bots only ran in short bursts
   (5 BTC barrier fills, all won, +$3.48 on $449) and the Hong Kong test has not yet seen a peak. Run them on an
   always-on machine. The barrier rule is forward-tested instead by <code>src/crypto/forward_replay.py</code>, which
-  replays each new day from public prints and reproduces the backtest exactly on 10–14 Sep. First window, 25–28 Sep:
-  108 entries on 4 assets, no losses, +1.2% each. About 0.3 losses were expected at the backtest rate, so this does
-  not yet test the tail.</p>
+  replays each new day from public prints and reproduces the backtest exactly on 10–14 Sep. Through 29 Sep:
+  139 entries on 4 assets, no losses, +1.2% each (94 strictly after the freeze, +1.3%). About 0.4 losses were
+  expected at the backtest rate, so this does not yet test the tail.</p>
 </section>
 
 <footer>Research notes: <code>research/01–10</code>, audit: <code>research/audit_lp_rewards.md</code>.

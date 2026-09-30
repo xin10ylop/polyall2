@@ -7,7 +7,7 @@ paper-trading bot. Summary report: `reports/edge_hunt.html` (published as a priv
 
 Adopted (small, survived out-of-sample tests and independent re-checks — see `research/11_independent_checks.md`):
 
-* **Sell daily BTC barrier longshots.** Market: "What price will Bitcoin hit on <day>?". Strikes have YES at 0.5–3¢ with ≤12 h left. Result: +0.74%/trade and 4 losses in 1,468 trades. That comes to ≈$25/day at $1k clips.
+* **Sell daily BTC barrier longshots.** Market: "What price will Bitcoin hit on <day>?". Strikes have YES at 0.5–3¢ with ≤12 h left. Result: +0.74%/trade and 4 losses in 1,468 trades. That comes to ≈$25/day at $1k clips. Out-of-time replay after the rule freeze (`src/crypto/forward_replay.py`, 25–29 Sep): 139 entries on 4 assets, 0 losses, +1.2% each; too few days to test the loss tail yet.
 * **Tweet-count markets for small X accounts.** Result: +18.6% OOS, but lumpy. Books absorb only ≈$54/day, so ≈$10/day.
 
 Rejected after testing (details in `research/`):
@@ -18,10 +18,10 @@ Rejected after testing (details in `research/`):
 * Mentions longshot fade: in-sample gains, zero out of sample.
 * Maker quoting of any kind: adverse selection.
 * Crypto vol models, box office, Spotify/Billboard and structural arbitrage.
+* LLM research + Jev judge on niche markets: in the forward test on 27 pre-registered markets (23 resolved), no accuracy over the market (Brier 0.121 vs 0.119) and −24%/trade as a taker. See `research/07_jev_experiments.md`.
 
-Pending forward tests:
+Still pending:
 
-* **LLM research + Jev judge.** 27 pre-registered forecasts in `research/forward_test/`. Interim (11 resolved): LLM Brier 0.075 vs market 0.093, but taker trades −3.5%/trade; Jev judge worse (0.161). See `research/07_jev_experiments.md`.
 * **Hong Kong Observatory live dead-bucket test.** Script: `src/nowcast/hk_monitor.py`. Not yet run through a peak: see the hosting note below.
 
 **Hosting note:** the cloud research container is shut down a few minutes after each session goes idle, so the
